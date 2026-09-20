@@ -143,6 +143,15 @@ app.get('/api/logs', (c) => {
   }
 })
 
+// Path aliases: /lodging → same app (API + UI)
+app.get('/lodging', (c) => c.redirect('/', 302))
+app.get('/lodging/', (c) => c.redirect('/', 302))
+app.all('/lodging/*', (c) => {
+  const url = new URL(c.req.url)
+  url.pathname = url.pathname.replace(/^\/lodging/, '') || '/'
+  return app.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx)
+})
+
 // Non-API: serve Vite build via Workers Assets (SPA fallback in wrangler.toml)
 app.all('*', async (c) => {
   return c.env.ASSETS.fetch(c.req.raw)

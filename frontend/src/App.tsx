@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
 import { mockApi } from './mockApi'
@@ -50,6 +50,28 @@ type LogEntry = {
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const FORCE_DEMO =
   import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.VITE_DEMO_MODE === '1'
+
+
+function classifyLog(file: string, line: string): string {
+  const hay = `${file} ${line}`.toLowerCase()
+  if (/error|fail|rejected|declined|502|exception/.test(hay)) return 'error'
+  if (/cancel|refund|cancelled/.test(hay)) return 'cancel'
+  if (/book|reserv|accepted|confirmed|payment.*approv|process_payment/.test(hay)) return 'book'
+  if (/reset|seed|hard.?reset/.test(hay)) return 'reset'
+  if (/propert|list_propert|available/.test(hay)) return 'property'
+  if (/payment|pay-/.test(hay)) return 'payment'
+  if (/gateway|health/.test(hay)) return 'gateway'
+  return 'info'
+}
+
+function logServiceLabel(file: string): string {
+  const f = file.replace(/\.log$/i, '')
+  if (f.includes('property')) return 'PROPERTY'
+  if (f.includes('payment')) return 'PAYMENT'
+  if (f.includes('reservation')) return 'RESERVATION'
+  if (f.includes('gateway')) return 'GATEWAY'
+  return f.toUpperCase() || 'LOG'
+}
 
 const CARD_HUES = [210, 160, 30, 280, 190, 340, 120, 45, 250, 15, 200, 300]
 
@@ -271,11 +293,78 @@ function App() {
     }
   }
 
+  const stateSnapshot = useMemo(
+    () => ({
+      demoMode,
+      modeReady,
+      loading,
+      error,
+      guestName,
+      search,
+      availableOnly,
+      minBeds,
+      bookingId,
+      cancellingId,
+      resetting,
+      logsOpen,
+      selectedId: selected?.id ?? null,
+      selectedName: selected?.name ?? null,
+      propertiesCount: properties.length,
+      filteredCount: filtered.length,
+      reservationsCount: reservations.length,
+      activeReservationsCount: reservations.filter((r) => (r.status ?? 'confirmed') !== 'cancelled').length,
+      lastResultStatus: result?.status ?? null,
+      lastResultMessage: result?.message ?? null,
+    }),
+    [
+      demoMode,
+      modeReady,
+      loading,
+      error,
+      guestName,
+      search,
+      availableOnly,
+      minBeds,
+      bookingId,
+      cancellingId,
+      resetting,
+      logsOpen,
+      selected,
+      properties.length,
+      filtered.length,
+      reservations,
+      result,
+    ],
+  )
+
+  const prevSnapshot = useRef(stateSnapshot)
+  const [changedKeys, setChangedKeys] = useState<string[]>([])
+
+  useEffect(() => {
+    const prev = prevSnapshot.current
+    const next = stateSnapshot
+    const keys = Object.keys(next) as (keyof typeof next)[]
+    const changed = keys.filter((k) => prev[k] !== next[k])
+    prevSnapshot.current = next
+    if (changed.length === 0) return
+    setChangedKeys(changed as string[])
+    const t = window.setTimeout(() => setChangedKeys([]), 900)
+    return () => window.clearTimeout(t)
+  }, [stateSnapshot])
+
+  const formatStateValue = (value: unknown) => {
+    if (value === null) return 'null'
+    if (value === undefined) return 'undefined'
+    if (typeof value === 'string') return JSON.stringify(value)
+    return String(value)
+  }
+
   const activeReservations = reservations.filter((r) => (r.status ?? 'confirmed') !== 'cancelled')
   const cancelledReservations = reservations.filter((r) => r.status === 'cancelled')
 
   return (
-    <div className="app">
+    <div className="app-shell">
+      <div className="app">
       <header className="header">
         <div className="header-text">
           <h1>Distributed Lodging</h1>
@@ -517,13 +606,26 @@ function App() {
           (logs.length === 0 ? (
             <p className="muted">No log lines yet.</p>
           ) : (
-            <pre className="log-panel">
-              {logs.map((entry, i) => (
-                <div key={`${entry.file}-${i}`}>
-                  [{entry.file}] {entry.line}
-                </div>
-              ))}
-            </pre>
+            <div className="log-terminal" role="log" aria-live="polite">
+              <div className="log-terminal-bar">
+                <span className="log-dot red" />
+                <span className="log-dot yellow" />
+                <span className="log-dot green" />
+                <span className="log-terminal-title">service activity</span>
+              </div>
+              <div className="log-panel">
+                {logs.map((entry, i) => {
+                  const kind = classifyLog(entry.file, entry.line)
+                  return (
+                    <div key={`${entry.file}-${i}`} className={`log-line log-${kind}`}>
+                      <span className="log-svc">{logServiceLabel(entry.file)}</span>
+                      <span className={`log-kind log-kind-${kind}`}>{kind}</span>
+                      <span className="log-msg">{entry.line}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           ))}
       </section>
 
@@ -589,6 +691,27 @@ function App() {
           </div>
         </div>
       )}
+      </div>
+
+      <aside className="state-panel" aria-label="Live React state">
+        <div className="state-panel-header">
+          <h2>Live state</h2>
+          <p className="state-panel-hint">Updates when you click or type. Flash = just changed.</p>
+        </div>
+        <ul className="state-list">
+          {(Object.entries(stateSnapshot) as [string, unknown][]).map(([key, value]) => (
+            <li
+              key={key}
+              className={changedKeys.includes(key) ? 'state-row flash' : 'state-row'}
+            >
+              <code className="state-key">{key}</code>
+              <code className={`state-val type-${typeof value}`}>
+                {formatStateValue(value)}
+              </code>
+            </li>
+          ))}
+        </ul>
+      </aside>
     </div>
   )
 }

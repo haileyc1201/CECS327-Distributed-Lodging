@@ -1,4 +1,6 @@
 name = "cecs327-lodging"
+workers_dev = true
+preview_urls = true
 main = "src/index.ts"
 compatibility_date = "2026-09-20"
 compatibility_flags = ["nodejs_compat"]
@@ -13,3 +15,12 @@ binding = "ASSETS"
 directory = "../frontend/dist"
 not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
+
+# Serve on PitchBlack domain (replaces Vercel coming-soon when routes are active)
+[[routes]]
+pattern = "pitchblack.icu/*"
+zone_name = "pitchblack.icu"
+
+[[routes]]
+pattern = "www.pitchblack.icu/*"
+zone_name = "pitchblack.icu"
