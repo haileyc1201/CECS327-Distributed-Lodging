@@ -170,3 +170,31 @@
   font-size: 0.75rem;
   line-height: 1.4;
 }
+
+.btn.danger {
+  background: #c62828;
+  color: #fff;
+  border-color: #b71c1c;
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+.cancelled-block {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e2e5;
+}
+
+.cancelled-heading {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.panel.result.cancelled {
+  border-color: #c62828;
+  background: #fff5f5;
+}

@@ -70,6 +70,39 @@ def process_payment(request):
     }
 
 
+def refund_payment(request):
+    payment_id = request.get("payment_id")
+    amount = request.get("amount")
+    reservation_id = request.get("reservation_id")
+
+    refund_id = f"ref-{uuid.uuid4().hex[:8]}"
+
+    if not payment_id:
+        return {
+            "status": "declined",
+            "refund_id": refund_id,
+            "message": "Missing payment_id"
+        }
+
+    try:
+        amount_val = float(amount) if amount is not None else 0.0
+    except (TypeError, ValueError):
+        return {
+            "status": "declined",
+            "refund_id": refund_id,
+            "message": "Invalid amount"
+        }
+
+    return {
+        "status": "refunded",
+        "refund_id": refund_id,
+        "payment_id": payment_id,
+        "reservation_id": reservation_id,
+        "amount": amount_val,
+        "message": f"Refund of ${amount_val:.2f} issued for payment {payment_id}"
+    }
+
+
 def handle_client(connection, address):
     log(f"Connected by {address}")
 
@@ -84,6 +117,8 @@ def handle_client(connection, address):
 
     if action == "process_payment":
         response = process_payment(request)
+    elif action in ("refund", "refund_payment"):
+        response = refund_payment(request)
     else:
         response = {
             "status": "declined",

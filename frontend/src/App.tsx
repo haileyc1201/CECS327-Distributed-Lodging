@@ -9,20 +9,31 @@ type Property = {
   available: boolean
 }
 
+type Reservation = {
+  reservation_id: string
+  property_id: number
+  property_name?: string
+  guest_name: string
+  amount: number
+  payment_id?: string
+  refund_id?: string
+  status?: string
+  created_at?: string
+  cancelled_at?: string
+}
+
 type BookResult = {
   status: string
   message?: string
-  reservation?: {
-    reservation_id: string
-    property_id: number
-    property_name?: string
-    guest_name: string
-    amount: number
-    payment_id?: string
-  }
+  reservation?: Reservation
   payment?: {
     status: string
     payment_id?: string
+    message?: string
+  }
+  refund?: {
+    status: string
+    refund_id?: string
     message?: string
   }
 }
@@ -45,10 +56,12 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 
 function App() {
   const [properties, setProperties] = useState<Property[]>([])
+  const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [guestName, setGuestName] = useState('Tom')
   const [bookingId, setBookingId] = useState<number | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [result, setResult] = useState<BookResult | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
 
@@ -70,6 +83,15 @@ function App() {
     }
   }, [])
 
+  const loadReservations = useCallback(async () => {
+    try {
+      const data = await api<{ status: string; reservations?: Reservation[] }>('/api/reservations')
+      setReservations(data.reservations ?? [])
+    } catch {
+      // optional — ignore if service not ready
+    }
+  }, [])
+
   const loadLogs = useCallback(async () => {
     try {
       const data = await api<{ status: string; logs?: LogEntry[] }>('/api/logs')
@@ -79,10 +101,15 @@ function App() {
     }
   }, [])
 
+  const refreshAll = useCallback(async () => {
+    await loadProperties()
+    await loadReservations()
+    await loadLogs()
+  }, [loadProperties, loadReservations, loadLogs])
+
   useEffect(() => {
-    void loadProperties()
-    void loadLogs()
-  }, [loadProperties, loadLogs])
+    void refreshAll()
+  }, [refreshAll])
 
   async function handleBook(e: FormEvent, propertyId: number) {
     e.preventDefault()
@@ -95,14 +122,34 @@ function App() {
         body: JSON.stringify({ property_id: propertyId, guest_name: guestName || 'Guest' }),
       })
       setResult(data)
-      await loadProperties()
-      await loadLogs()
+      await refreshAll()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Booking failed')
     } finally {
       setBookingId(null)
     }
   }
+
+  async function handleCancel(reservationId: string) {
+    setCancellingId(reservationId)
+    setResult(null)
+    setError(null)
+    try {
+      const data = await api<BookResult>('/api/reservations/cancel', {
+        method: 'POST',
+        body: JSON.stringify({ reservation_id: reservationId }),
+      })
+      setResult(data)
+      await refreshAll()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cancellation failed')
+    } finally {
+      setCancellingId(null)
+    }
+  }
+
+  const activeReservations = reservations.filter((r) => (r.status ?? 'confirmed') !== 'cancelled')
+  const cancelledReservations = reservations.filter((r) => r.status === 'cancelled')
 
   return (
     <div className="app">
@@ -114,7 +161,7 @@ function App() {
       <section className="panel">
         <div className="panel-header">
           <h2>Properties</h2>
-          <button type="button" className="btn secondary" onClick={() => void loadProperties()}>
+          <button type="button" className="btn secondary" onClick={() => void refreshAll()}>
             Refresh
           </button>
         </div>
@@ -164,9 +211,64 @@ function App() {
         </ul>
       </section>
 
+      <section className="panel">
+        <div className="panel-header">
+          <h2>Your reservations</h2>
+          <button type="button" className="btn secondary" onClick={() => void loadReservations()}>
+            Refresh
+          </button>
+        </div>
+
+        {activeReservations.length === 0 ? (
+          <p className="muted">No active reservations. Book a property above.</p>
+        ) : (
+          <ul className="property-list">
+            {activeReservations.map((r) => (
+              <li key={r.reservation_id} className="property-card available">
+                <div className="property-info">
+                  <h3>{r.property_name ?? `Property ${r.property_id}`}</h3>
+                  <p>
+                    {r.reservation_id} · {r.guest_name} · ${r.amount}
+                    {r.payment_id ? ` · ${r.payment_id}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={cancellingId === r.reservation_id}
+                  onClick={() => void handleCancel(r.reservation_id)}
+                >
+                  {cancellingId === r.reservation_id ? 'Cancelling…' : 'Cancel'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {cancelledReservations.length > 0 && (
+          <div className="cancelled-block">
+            <h3 className="cancelled-heading">Cancelled</h3>
+            <ul className="property-list">
+              {cancelledReservations.map((r) => (
+                <li key={r.reservation_id} className="property-card unavailable">
+                  <div className="property-info">
+                    <h3>{r.property_name ?? `Property ${r.property_id}`}</h3>
+                    <p>
+                      {r.reservation_id} · {r.guest_name} · refunded
+                      {r.refund_id ? ` (${r.refund_id})` : ''}
+                    </p>
+                  </div>
+                  <span className="badge no">Cancelled</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
       {result && (
         <section className={`panel result ${result.status}`}>
-          <h2>Booking result</h2>
+          <h2>Last action</h2>
           <p>
             <strong>Status:</strong> {result.status}
           </p>
@@ -184,12 +286,21 @@ function App() {
               {result.reservation.payment_id && (
                 <li>Payment ID: {result.reservation.payment_id}</li>
               )}
+              {result.reservation.refund_id && (
+                <li>Refund ID: {result.reservation.refund_id}</li>
+              )}
             </ul>
           )}
           {result.payment && (
             <p>
               <strong>Payment:</strong> {result.payment.status}
               {result.payment.message ? ` — ${result.payment.message}` : ''}
+            </p>
+          )}
+          {result.refund && (
+            <p>
+              <strong>Refund:</strong> {result.refund.status}
+              {result.refund.message ? ` — ${result.refund.message}` : ''}
             </p>
           )}
         </section>

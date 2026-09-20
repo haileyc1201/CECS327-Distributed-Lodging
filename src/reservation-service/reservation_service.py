@@ -57,6 +57,15 @@ def process_payment(property_id, amount, guest_name):
     })
 
 
+def refund_payment(payment_id, amount, reservation_id):
+    return tcp_request(PAYMENT_HOST, PAYMENT_PORT, {
+        "action": "refund",
+        "payment_id": payment_id,
+        "amount": amount,
+        "reservation_id": reservation_id
+    })
+
+
 def load_reservations():
     if not RESERVATIONS_FILE.exists():
         RESERVATIONS_FILE.write_text("[]\n", encoding="utf-8")
@@ -71,13 +80,13 @@ def save_reservations(reservations):
         f.write("\n")
 
 
-def mark_property_unavailable(property_id):
+def set_property_available(property_id, available):
     with open(PROPERTIES_FILE, "r", encoding="utf-8") as f:
         properties = json.load(f)
 
     for prop in properties:
         if prop["id"] == property_id:
-            prop["available"] = False
+            prop["available"] = available
             break
 
     with open(PROPERTIES_FILE, "w", encoding="utf-8") as f:
@@ -144,13 +153,14 @@ def book_reservation(request):
         "guest_name": guest_name,
         "amount": amount,
         "payment_id": payment_response.get("payment_id"),
+        "status": "confirmed",
         "created_at": datetime.now().isoformat()
     }
 
     reservations = load_reservations()
     reservations.append(reservation)
     save_reservations(reservations)
-    mark_property_unavailable(property_id)
+    set_property_available(property_id, False)
     log(f"Saved reservation {reservation_id} and marked property {property_id} unavailable")
 
     return {
@@ -158,6 +168,69 @@ def book_reservation(request):
         "message": "Reservation confirmed",
         "reservation": reservation,
         "payment": payment_response
+    }
+
+
+def list_reservations(include_cancelled=True):
+    reservations = load_reservations()
+    if include_cancelled:
+        return {"status": "success", "reservations": reservations}
+    active = [r for r in reservations if r.get("status", "confirmed") != "cancelled"]
+    return {"status": "success", "reservations": active}
+
+
+def cancel_reservation(request):
+    reservation_id = request.get("reservation_id")
+    if not reservation_id:
+        return {"status": "rejected", "message": "reservation_id is required"}
+
+    reservations = load_reservations()
+    target = None
+    for res in reservations:
+        if res.get("reservation_id") == reservation_id:
+            target = res
+            break
+
+    if target is None:
+        return {"status": "rejected", "message": "Reservation not found"}
+
+    if target.get("status") == "cancelled":
+        return {
+            "status": "rejected",
+            "message": "Reservation already cancelled",
+            "reservation": target
+        }
+
+    refund_response = None
+    payment_id = target.get("payment_id")
+    if payment_id:
+        refund_response = refund_payment(
+            payment_id,
+            target.get("amount", 0),
+            reservation_id
+        )
+        log(f"Payment Service refund replied: {refund_response}")
+        if refund_response.get("status") != "refunded":
+            return {
+                "status": "rejected",
+                "message": "Refund failed; reservation not cancelled",
+                "refund": refund_response
+            }
+
+    target["status"] = "cancelled"
+    target["cancelled_at"] = datetime.now().isoformat()
+    if refund_response:
+        target["refund_id"] = refund_response.get("refund_id")
+
+    save_reservations(reservations)
+    set_property_available(target["property_id"], True)
+    log(f"Cancelled {reservation_id}; property {target['property_id']} available again")
+
+    return {
+        "status": "cancelled",
+        "message": "Reservation cancelled and payment refunded",
+        "reservation": target,
+        "refund": refund_response
     }
 
 
@@ -175,6 +248,10 @@ def handle_client(connection, address):
 
     if action in ("book", "create_reservation"):
         response = book_reservation(request)
+    elif action in ("cancel", "cancel_reservation"):
+        response = cancel_reservation(request)
+    elif action in ("list", "list_reservations"):
+        response = list_reservations()
     elif action == "check_availability":
         property_id = request.get("property_id")
         if property_id is None:
@@ -182,8 +259,7 @@ def handle_client(connection, address):
         else:
             response = check_availability(property_id)
     else:
-        # Backward compat: property_id only => check availability
-        if "property_id" in request and action not in ("book", "create_reservation"):
+        if "property_id" in request:
             response = check_availability(request["property_id"])
         else:
             response = {"status": "rejected", "message": f"Unknown action: {action}"}
@@ -193,7 +269,6 @@ def handle_client(connection, address):
 
 
 def main():
-    # Ensure reservations file exists
     load_reservations()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:

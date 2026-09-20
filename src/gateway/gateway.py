@@ -85,6 +85,46 @@ def create_reservation():
         return jsonify({"status": "error", "message": str(exc)}), 502
 
 
+@app.get("/api/reservations")
+def list_reservations():
+    try:
+        result = tcp_json(RESERVATION_HOST, RESERVATION_PORT, {"action": "list_reservations"})
+        return jsonify(result)
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 502
+
+
+@app.post("/api/reservations/cancel")
+def cancel_reservation():
+    body = request.get_json(silent=True) or {}
+    reservation_id = body.get("reservation_id")
+    if not reservation_id:
+        return jsonify({"status": "rejected", "message": "reservation_id is required"}), 400
+
+    try:
+        result = tcp_json(RESERVATION_HOST, RESERVATION_PORT, {
+            "action": "cancel",
+            "reservation_id": reservation_id
+        })
+        status_code = 200 if result.get("status") == "cancelled" else 400
+        return jsonify(result), status_code
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 502
+
+
+@app.delete("/api/reservations/<reservation_id>")
+def delete_reservation(reservation_id):
+    try:
+        result = tcp_json(RESERVATION_HOST, RESERVATION_PORT, {
+            "action": "cancel",
+            "reservation_id": reservation_id
+        })
+        status_code = 200 if result.get("status") == "cancelled" else 400
+        return jsonify(result), status_code
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 502
+
+
 @app.get("/api/logs")
 def get_logs():
     lines = []
