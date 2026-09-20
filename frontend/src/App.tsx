@@ -64,7 +64,7 @@ async function liveApi<T>(path: string, options?: RequestInit): Promise<T> {
 
 async function detectDemoMode(): Promise<boolean> {
   if (FORCE_DEMO) return true
-  // Production static deploy (GitHub Pages) has no Python gateway.
+  // Production static deploy (GitHub Pages) has no local gateway.
   if (import.meta.env.PROD) {
     try {
       const controller = new AbortController()
@@ -300,7 +300,7 @@ function App() {
 
       {demoMode && (
         <div className="demo-banner" role="status">
-          Demo mode (GitHub Pages) — mock data; run local services for real TCP backend.
+          Demo mode (GitHub Pages) — mock data; run local Node services for the real HTTP backend.
         </div>
       )}
 

@@ -1,15 +1,7 @@
-# Source Code
+# src/
 
-Milestone 1 services and clients:
+Python TCP services previously lived here. They have been moved to
+`archive/python-tcp/`.
 
-| Folder | Role | Port |
-|--------|------|------|
-| `property-service/` | Property lookup / list (TCP JSON) | 5001 |
-| `reservation-service/` | Availability check + booking (TCP JSON) | 5002 |
-| `payment-service/` | Mock payment approval (TCP JSON) | 5003 |
-| `gateway/` | Flask HTTP API for the React UI | 8000 |
-| `client/` | Simple TCP demo client | — |
-
-The React UI lives in `/frontend` at the repo root.
-
-Start commands are documented in the root README.
+**Current backend:** Node.js HTTP microservices in `../services/`
+(property, payment, reservation, gateway).
