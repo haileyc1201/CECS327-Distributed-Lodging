@@ -1,6 +1,7 @@
 """
 HTTP API bridge so the React frontend can talk to the TCP microservices.
 """
+import csv
 import json
 import socket
 from pathlib import Path
@@ -23,6 +24,38 @@ RESERVATION_PORT = 5002
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGS_DIR = ROOT / "logs"
+PROPERTIES_FILE = ROOT / "data" / "properties.csv"
+RESERVATIONS_FILE = ROOT / "data" / "reservations.csv"
+
+# Seed listings for Hard reset (102, 107, 112 start unavailable).
+SEED_PROPERTIES = [
+    {"id": "101", "name": "Long Beach Apartment", "price": "150", "available": "true", "city": "Long Beach", "beds": "2"},
+    {"id": "102", "name": "Downtown Studio", "price": "120", "available": "false", "city": "Long Beach", "beds": "1"},
+    {"id": "103", "name": "Beach House", "price": "275", "available": "true", "city": "Long Beach", "beds": "3"},
+    {"id": "104", "name": "Belmont Shore Loft", "price": "195", "available": "true", "city": "Long Beach", "beds": "2"},
+    {"id": "105", "name": "Campus Cottage", "price": "110", "available": "true", "city": "Long Beach", "beds": "1"},
+    {"id": "106", "name": "Harbor View Condo", "price": "230", "available": "true", "city": "Long Beach", "beds": "2"},
+    {"id": "107", "name": "Naples Canal Home", "price": "340", "available": "false", "city": "Long Beach", "beds": "4"},
+    {"id": "108", "name": "Signal Hill Bungalow", "price": "165", "available": "true", "city": "Signal Hill", "beds": "2"},
+    {"id": "109", "name": "Seal Beach Cabin", "price": "210", "available": "true", "city": "Seal Beach", "beds": "2"},
+    {"id": "110", "name": "Arts District Flat", "price": "180", "available": "true", "city": "Los Angeles", "beds": "1"},
+    {"id": "111", "name": "Koreatown Suite", "price": "140", "available": "true", "city": "Los Angeles", "beds": "1"},
+    {"id": "112", "name": "Pasadena Guest House", "price": "255", "available": "false", "city": "Pasadena", "beds": "3"},
+]
+
+PROPERTY_FIELDS = ["id", "name", "price", "available", "city", "beds"]
+RESERVATION_FIELDS = [
+    "reservation_id",
+    "property_id",
+    "property_name",
+    "guest_name",
+    "amount",
+    "payment_id",
+    "refund_id",
+    "status",
+    "created_at",
+    "cancelled_at",
+]
 
 app = Flask(__name__)
 CORS(app)
@@ -123,6 +156,25 @@ def delete_reservation(reservation_id):
         return jsonify(result), status_code
     except Exception as exc:
         return jsonify({"status": "error", "message": str(exc)}), 502
+
+
+@app.post("/api/reset")
+def reset_demo_data():
+    """Restore seed properties.csv and clear reservations.csv (header only)."""
+    try:
+        PROPERTIES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(PROPERTIES_FILE, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=PROPERTY_FIELDS)
+            writer.writeheader()
+            writer.writerows(SEED_PROPERTIES)
+
+        with open(RESERVATIONS_FILE, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=RESERVATION_FIELDS)
+            writer.writeheader()
+
+        return jsonify({"status": "ok", "message": "Demo data reset"})
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 500
 
 
 @app.get("/api/logs")

@@ -1,9 +1,12 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
-export default defineConfig({
+// Project Pages URL: https://<owner>.github.io/CECS327-Distributed-Lodging/
+const repoBase = '/CECS327-Distributed-Lodging/'
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  base: mode === 'production' ? repoBase : '/',
   server: {
     port: 5173,
     proxy: {
@@ -13,4 +16,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

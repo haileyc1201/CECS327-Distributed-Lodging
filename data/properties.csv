@@ -1,0 +1,13 @@
+id,name,price,available,city,beds
+101,Long Beach Apartment,150,true,Long Beach,2
+102,Downtown Studio,120,false,Long Beach,1
+103,Beach House,275,true,Long Beach,3
+104,Belmont Shore Loft,195,true,Long Beach,2
+105,Campus Cottage,110,true,Long Beach,1
+106,Harbor View Condo,230,true,Long Beach,2
+107,Naples Canal Home,340,false,Long Beach,4
+108,Signal Hill Bungalow,165,true,Signal Hill,2
+109,Seal Beach Cabin,210,true,Seal Beach,2
+110,Arts District Flat,180,true,Los Angeles,1
+111,Koreatown Suite,140,true,Los Angeles,1
+112,Pasadena Guest House,255,false,Pasadena,3

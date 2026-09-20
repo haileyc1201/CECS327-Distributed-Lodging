@@ -20,3 +20,7 @@ python src/gateway/gateway.py
 | GET | `/api/properties/<id>` | Get one property |
 | POST | `/api/reservations` | Book `{ property_id, guest_name }` |
 | GET | `/api/logs` | Recent lines from `logs/*.log` |
+
+## Demo reset
+
+`POST /api/reset` restores seed `data/properties.csv` and clears `data/reservations.csv` (header only).

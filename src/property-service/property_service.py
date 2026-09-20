@@ -1,5 +1,6 @@
 import socket
 import json
+import csv
 from pathlib import Path
 from datetime import datetime
 
@@ -8,7 +9,7 @@ PORT = 5001
 RECV_BUFFER = 65536
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_FILE = ROOT / "data" / "properties.json"
+DATA_FILE = ROOT / "data" / "properties.csv"
 LOG_FILE = ROOT / "logs" / "property.log"
 
 
@@ -26,9 +27,26 @@ def log(message):
         pass
 
 
+def _parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "1", "yes")
+
+
 def load_properties():
-    with open(DATA_FILE, "r", encoding="utf-8") as file:
-        return json.load(file)
+    properties = []
+    with open(DATA_FILE, "r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            properties.append({
+                "id": int(row["id"]),
+                "name": row["name"],
+                "price": int(float(row["price"])),
+                "available": _parse_bool(row["available"]),
+                "city": row.get("city", ""),
+                "beds": int(row["beds"]) if row.get("beds") not in (None, "") else 1,
+            })
+    return properties
 
 
 def find_property(properties, property_id):
@@ -44,7 +62,7 @@ def handle_get_property(request):
         return {"status": "error", "message": "property_id is required"}
 
     properties = load_properties()
-    property_data = find_property(properties, property_id)
+    property_data = find_property(properties, int(property_id))
 
     if property_data is None:
         return {"status": "error", "message": "Property not found"}
@@ -69,7 +87,6 @@ def handle_client(connection, address):
 
     action = request.get("action")
 
-    # Backward compatible: no action + property_id => get_property
     if action in (None, "", "get_property", "check_availability"):
         if "property_id" in request:
             response = handle_get_property(request)

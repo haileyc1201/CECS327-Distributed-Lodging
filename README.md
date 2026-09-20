@@ -25,7 +25,7 @@ React UI / Client
        -> Reservation Service (:5002)
             -> Property Service
             -> Payment Service (:5003)
-            -> data/reservations.json + data/properties.json
+            -> data/reservations.csv + data/properties.csv
 ```
 
 User Service and Review Service are planned for later milestones.
@@ -53,8 +53,8 @@ User Service and Review Service are planned for later milestones.
 │   ├── reservation-service/
 │   └── payment-service/
 ├── data/
-│   ├── properties.json
-│   └── reservations.json
+│   ├── properties.csv
+│   └── reservations.csv
 ├── logs/
 ├── screenshots/
 └── README.md
@@ -118,11 +118,12 @@ Open **http://127.0.0.1:5173**
 ## Demo Steps (for video)
 
 1. Start Property, Payment, Reservation, Gateway, then Frontend (order above).
-2. In the browser, confirm three properties load (101 available, 102 unavailable, 103 available).
-3. Enter a guest name and click **Book** on property 101.
+2. In the browser, confirm ~12 property **cards** load (city, beds, price, available badge). Search/filter works client-side.
+3. Enter a guest name, click a card, then **Book** (e.g. property 101).
 4. Confirm the result shows `accepted`, a reservation id, and payment `approved`.
-5. Refresh — property 101 should now be unavailable.
-6. Optional: use the TCP client:
+5. Refresh — that property should now be unavailable. Cancel from **Your reservations** to refund and unlock.
+6. **Hard reset** (header button, two confirms) restores seed CSV data for another run. Or: `curl -X POST http://127.0.0.1:8000/api/reset`
+7. Optional: use the TCP client:
 
 ```bash
 source .venv/bin/activate
@@ -130,7 +131,7 @@ python src/client/client.py list
 python src/client/client.py book 103 Alice
 ```
 
-7. Optional curl checks:
+8. Optional curl checks:
 
 ```bash
 curl http://127.0.0.1:8000/api/health
@@ -138,9 +139,19 @@ curl http://127.0.0.1:8000/api/properties
 curl -X POST http://127.0.0.1:8000/api/reservations \
   -H 'Content-Type: application/json' \
   -d '{"property_id": 103, "guest_name": "Tom"}'
+curl -X POST http://127.0.0.1:8000/api/reset
 ```
 
-To reset availability for another demo run, edit `data/properties.json` (`available: true`) and clear `data/reservations.json` to `[]`.
+Data files are CSV (`data/properties.csv`, `data/reservations.csv`), not JSON.
+
+## GitHub Pages (static UI demo)
+
+Teammates can try the React UI without running Python. Pages serves a **demo/mock mode** (in-browser store seeded with the same ~12 listings). Banner shows when mock is active. Book / cancel / Hard reset work client-side only.
+
+- Workflow: `.github/workflows/pages.yml` builds `frontend/` with `base: /CECS327-Distributed-Lodging/` and deploys on push to `main` or `tom-react-frontend`.
+- Enable **Settings → Pages → Source: GitHub Actions** on the team repo.
+- Expected URL: https://haileyc1201.github.io/CECS327-Distributed-Lodging/
+- Real distributed TCP demo still requires running Property, Payment, Reservation, and Gateway locally.
 
 ## Milestone 1 Goal
 

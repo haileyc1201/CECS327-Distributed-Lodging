@@ -1,6 +1,14 @@
 # Frontend (React + Vite)
 
-Browser UI for the Milestone 1 lodging demo. Talks to the HTTP gateway at `http://127.0.0.1:8000` (proxied in dev).
+Browser UI for the Milestone 1 lodging skeleton demo. Talks to the HTTP gateway at `http://127.0.0.1:8000` (proxied in dev), or runs in **demo/mock mode** on GitHub Pages.
+
+## Features
+
+- Search (name, city, id) and filters (available only, min beds)
+- Clickable property cards with detail modal + Book
+- Reservations list with Cancel (refund path)
+- Hard reset (two confirms) to restore seed data
+- Collapsible activity logs
 
 ## Setup
 
@@ -19,10 +27,10 @@ npm run dev
 
 Open http://127.0.0.1:5173
 
-Optional: set `VITE_API_URL=http://127.0.0.1:8000` if not using the Vite proxy.
+Force mock data locally: `VITE_DEMO_MODE=true npm run dev`
 
 ## Scripts
 
-- `npm run dev` — start Vite dev server
-- `npm run build` — production build
+- `npm run dev` — Vite dev server
+- `npm run build` — production build (`base` set for GitHub Pages)
 - `npm run preview` — preview production build

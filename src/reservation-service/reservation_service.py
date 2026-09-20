@@ -1,5 +1,6 @@
 import socket
 import json
+import csv
 import uuid
 from pathlib import Path
 from datetime import datetime
@@ -14,9 +15,23 @@ PAYMENT_HOST = "127.0.0.1"
 PAYMENT_PORT = 5003
 
 ROOT = Path(__file__).resolve().parents[2]
-PROPERTIES_FILE = ROOT / "data" / "properties.json"
-RESERVATIONS_FILE = ROOT / "data" / "reservations.json"
+PROPERTIES_FILE = ROOT / "data" / "properties.csv"
+RESERVATIONS_FILE = ROOT / "data" / "reservations.csv"
 LOG_FILE = ROOT / "logs" / "reservation.log"
+
+PROPERTY_FIELDS = ["id", "name", "price", "available", "city", "beds"]
+RESERVATION_FIELDS = [
+    "reservation_id",
+    "property_id",
+    "property_name",
+    "guest_name",
+    "amount",
+    "payment_id",
+    "refund_id",
+    "status",
+    "created_at",
+    "cancelled_at",
+]
 
 
 def log(message):
@@ -31,6 +46,12 @@ def log(message):
             }) + "\n")
     except OSError:
         pass
+
+
+def _parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "1", "yes")
 
 
 def tcp_request(host, port, payload):
@@ -66,32 +87,77 @@ def refund_payment(payment_id, amount, reservation_id):
     })
 
 
+def _ensure_reservations_file():
+    if not RESERVATIONS_FILE.exists() or RESERVATIONS_FILE.stat().st_size == 0:
+        with open(RESERVATIONS_FILE, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=RESERVATION_FIELDS)
+            writer.writeheader()
+
+
 def load_reservations():
-    if not RESERVATIONS_FILE.exists():
-        RESERVATIONS_FILE.write_text("[]\n", encoding="utf-8")
-        return []
-    with open(RESERVATIONS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    _ensure_reservations_file()
+    reservations = []
+    with open(RESERVATIONS_FILE, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if not row.get("reservation_id"):
+                continue
+            reservations.append({
+                "reservation_id": row["reservation_id"],
+                "property_id": int(row["property_id"]) if row.get("property_id") else None,
+                "property_name": row.get("property_name") or "",
+                "guest_name": row.get("guest_name") or "",
+                "amount": int(float(row["amount"])) if row.get("amount") else 0,
+                "payment_id": row.get("payment_id") or None,
+                "refund_id": row.get("refund_id") or None,
+                "status": row.get("status") or "confirmed",
+                "created_at": row.get("created_at") or None,
+                "cancelled_at": row.get("cancelled_at") or None,
+            })
+            # Drop null-ish optional keys for cleaner API (keep empty string as None)
+            if not reservations[-1]["payment_id"]:
+                reservations[-1]["payment_id"] = None
+            if not reservations[-1]["refund_id"]:
+                reservations[-1]["refund_id"] = None
+            if not reservations[-1]["cancelled_at"]:
+                reservations[-1]["cancelled_at"] = None
+    return reservations
 
 
 def save_reservations(reservations):
-    with open(RESERVATIONS_FILE, "w", encoding="utf-8") as f:
-        json.dump(reservations, f, indent=2)
-        f.write("\n")
+    with open(RESERVATIONS_FILE, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=RESERVATION_FIELDS)
+        writer.writeheader()
+        for res in reservations:
+            writer.writerow({
+                "reservation_id": res.get("reservation_id", ""),
+                "property_id": res.get("property_id", ""),
+                "property_name": res.get("property_name", ""),
+                "guest_name": res.get("guest_name", ""),
+                "amount": res.get("amount", ""),
+                "payment_id": res.get("payment_id") or "",
+                "refund_id": res.get("refund_id") or "",
+                "status": res.get("status", "confirmed"),
+                "created_at": res.get("created_at") or "",
+                "cancelled_at": res.get("cancelled_at") or "",
+            })
 
 
 def set_property_available(property_id, available):
-    with open(PROPERTIES_FILE, "r", encoding="utf-8") as f:
-        properties = json.load(f)
+    rows = []
+    with open(PROPERTIES_FILE, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        fieldnames = list(reader.fieldnames or PROPERTY_FIELDS)
+        for row in reader:
+            if int(row["id"]) == int(property_id):
+                row["available"] = "true" if available else "false"
+            rows.append(row)
 
-    for prop in properties:
-        if prop["id"] == property_id:
-            prop["available"] = available
-            break
-
-    with open(PROPERTIES_FILE, "w", encoding="utf-8") as f:
-        json.dump(properties, f, indent=2)
-        f.write("\n")
+    # Preserve all columns from the file (city, beds, etc.)
+    with open(PROPERTIES_FILE, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def check_availability(property_id):
@@ -148,13 +214,15 @@ def book_reservation(request):
     reservation_id = f"res-{uuid.uuid4().hex[:8]}"
     reservation = {
         "reservation_id": reservation_id,
-        "property_id": property_id,
+        "property_id": int(property_id),
         "property_name": prop.get("name"),
         "guest_name": guest_name,
         "amount": amount,
         "payment_id": payment_response.get("payment_id"),
+        "refund_id": None,
         "status": "confirmed",
-        "created_at": datetime.now().isoformat()
+        "created_at": datetime.now().isoformat(),
+        "cancelled_at": None,
     }
 
     reservations = load_reservations()

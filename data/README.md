@@ -1,8 +1,20 @@
 # Data
 
-- `properties.json` — shared property listings (availability updated on booking/cancel)
-- `reservations.json` — reservations; status is `confirmed` or `cancelled`
+CSV files used by the Property and Reservation services (stdlib `csv` only).
 
-Cancel restores property availability and records a mock payment refund.
+- `properties.csv` — columns: `id,name,price,available,city,beds`
+- `reservations.csv` — columns: `reservation_id,property_id,property_name,guest_name,amount,payment_id,refund_id,status,created_at,cancelled_at`
 
-For a clean demo, set properties back to `available: true` and reset `reservations.json` to `[]`.
+An empty reservations file still has a header row.
+
+## Reset demo data
+
+**Preferred:** use the UI **Hard reset** button (two confirms) or:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/reset
+```
+
+That restores seed listings (102, 107, 112 unavailable; others available) and clears reservations to header-only.
+
+Manual reset: copy seed availability into `properties.csv` and keep only the header in `reservations.csv`.

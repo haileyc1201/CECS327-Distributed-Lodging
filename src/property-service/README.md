@@ -14,4 +14,6 @@ python src/property-service/property_service.py
 - `list_properties` — `{ "action": "list_properties" }`
 - Backward compatible: `{ "property_id": 101 }` behaves like `get_property`
 
-Data file: `data/properties.json`
+Responses include `city` and `beds` in addition to `id`, `name`, `price`, `available`.
+
+Data file: `data/properties.csv`
