@@ -30,3 +30,9 @@ frontend/.vite/
 
 # Service stdout captures
 logs/*.out
+
+# Cloudflare / Wrangler
+cloudflare/node_modules/
+cloudflare/.wrangler/
+cloudflare/.wrangler-bundle/
+.wrangler/

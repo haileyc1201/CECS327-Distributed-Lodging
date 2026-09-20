@@ -1,0 +1,26 @@
+{
+  "name": "cecs327-lodging-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker API + static assets for CECS 327 Distributed Lodging",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build:frontend": "npm run build --prefix ../frontend -- --mode production",
+    "cf:build-frontend": "VITE_DEPLOY_TARGET=cloudflare npm run build --prefix ../frontend",
+    "typecheck": "tsc --noEmit",
+    "dry-run": "wrangler deploy --dry-run --outdir=./.wrangler-bundle"
+  },
+  "dependencies": {
+    "hono": "^4.7.10"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260920.1",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.135.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

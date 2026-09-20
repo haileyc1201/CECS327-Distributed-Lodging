@@ -300,7 +300,8 @@ function App() {
 
       {demoMode && (
         <div className="demo-banner" role="status">
-          Demo mode (GitHub Pages) — mock data; run local Node services for the real HTTP backend.
+          Demo mode — browser mock data. Live API loads automatically when{' '}
+          <code>/api/health</code> is reachable (local gateway or Cloudflare Worker).
         </div>
       )}
 

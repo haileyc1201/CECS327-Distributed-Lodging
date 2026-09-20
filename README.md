@@ -10,13 +10,13 @@ Milestone 1 project for CECS 327, Section 02 at California State University, Lon
 
 We are building a distributed lodging reservation system similar to Airbnb. Guests will be able to search properties and make reservations, while hosts will be able to create listings and manage availability.
 
-For Milestone 1, we have three backend **Node.js HTTP** microservices plus an Express gateway and React UI:
+For Milestone 1, we have three backend **Node.js HTTP** microservices plus an Express gateway and React UI (local demo), and a **Cloudflare Worker + D1** host for the same API contract:
 
-- Property Service (HTTP `:5001`)
-- Reservation Service (HTTP `:5002`)
-- Payment Service (HTTP `:5003`)
-- HTTP Gateway (Express `:8000`) — single API surface for the React UI
-- React frontend (Vite `:5173`)
+- Property Service (HTTP `:5001` locally; D1 module on Cloudflare)
+- Reservation Service (HTTP `:5002` locally; Worker module on Cloudflare)
+- Payment Service (HTTP `:5003` locally; mock module on Cloudflare)
+- HTTP Gateway (Express `:8000` locally; Hono Worker `cecs327-lodging` on Cloudflare)
+- React frontend (Vite `:5173` locally; Workers Assets when hosted)
 
 ```text
 React UI (:5173)
@@ -49,19 +49,25 @@ User Service and Review Service are planned for later milestones.
 .
 ├── docs/
 ├── frontend/                 # React + Vite UI
-├── services/
-│   ├── shared/               # CSV read/write helpers
+├── services/                 # Local Node HTTP microservices
+│   ├── shared/
 │   ├── property-service/
 │   ├── reservation-service/
 │   ├── payment-service/
 │   └── gateway/
+├── cloudflare/               # Hosted Worker (Hono) + D1 + Assets
+│   ├── src/
+│   │   ├── index.ts          # /api/* gateway routes
+│   │   └── services/         # property / payment / reservation modules
+│   ├── wrangler.toml
+│   └── schema.sql
 ├── archive/python-tcp/       # Legacy Python TCP + Flask (not primary)
 ├── data/
 │   ├── properties.csv
 │   └── reservations.csv
 ├── logs/
 ├── screenshots/
-├── package.json              # Root Node deps + start scripts
+├── package.json
 ├── start-lodging.sh
 └── README.md
 ```
@@ -137,12 +143,74 @@ Data files are CSV (`data/properties.csv`, `data/reservations.csv`), not JSON.
 
 ## GitHub Pages (static UI demo)
 
-Teammates can try the React UI without running Node services. Pages serves a **demo/mock mode** (in-browser store seeded with the same ~12 listings). Banner shows when mock is active. Book / cancel / Hard reset work client-side only. In local Vite dev, the UI also falls back to mock if the gateway (`:8000`) is down.
+Teammates can try the React UI without a backend. Pages serves **demo/mock mode** (in-browser store seeded with the same ~12 listings). Banner shows when mock is active. For a **full live API** (D1-backed), use the Cloudflare Workers deploy above.
 
-- Workflow: `.github/workflows/pages.yml` builds `frontend/` with `base: /CECS327-Distributed-Lodging/` and deploys on push to `main` or `tom-react-frontend`.
+- Workflow: `.github/workflows/pages.yml` builds `frontend/` with `base: /CECS327-Distributed-Lodging/` (default production base) and deploys on push to `main` or `tom-react-frontend`.
+- Cloudflare builds use `VITE_DEPLOY_TARGET=cloudflare` so `base` is `/`.
 - Enable **Settings → Pages → Source: GitHub Actions** on the team repo.
-- Expected URL: https://haileyc1201.github.io/CECS327-Distributed-Lodging/
-- Real distributed demo still requires running Property, Payment, Reservation, and Gateway locally.
+- Expected Pages URL: https://haileyc1201.github.io/CECS327-Distributed-Lodging/
+- Local Node stack: Property, Payment, Reservation, and Gateway still work via `npm start`.
+
+
+## Cloudflare Workers deploy (hosted full API)
+
+The `cloudflare/` Worker named **`cecs327-lodging`** serves the React build from Workers Assets and implements the same `/api/*` contract as the Express gateway. Properties and reservations are stored in D1 database `cecs327-lodging` (id `0349fd11-02aa-4509-bcc5-ec72f06bb7a1`).
+
+Architecture (still “distributed” in code — separate modules):
+
+```text
+Browser (same origin)
+  -> Worker Hono gateway (/api/* + static assets)
+       -> propertyService  (D1)
+       -> reservationService
+            -> propertyService
+            -> paymentService (mock approve/refund)
+```
+
+### Build frontend for Workers (root base + empty API URL)
+
+```bash
+# Same-origin API: leave VITE_API_URL unset
+cd frontend
+VITE_DEPLOY_TARGET=cloudflare npm install
+VITE_DEPLOY_TARGET=cloudflare npm run build   # writes frontend/dist with base /
+cd ../cloudflare
+npm install
+```
+
+Or from repo root: `npm run cf:build` (after `npm run cf:install`).
+
+### Deploy with Wrangler
+
+Requires **Node.js 22+** (Wrangler 4) and `CLOUDFLARE_API_TOKEN` (or `npx wrangler login`):
+
+```bash
+cd cloudflare
+npx wrangler deploy
+```
+
+Root shortcut (build + deploy): `npm run cf:deploy`
+
+After deploy, open the Worker URL (e.g. `https://cecs327-lodging.<account>.workers.dev`). The UI probes `GET /api/health` on the same origin and **disables** browser mock mode when health returns `{ status: "ok" }`.
+
+### Hard reset on hosted demo
+
+Use the UI **Hard reset** button (two confirms) or:
+
+```bash
+curl -X POST https://cecs327-lodging.<account>.workers.dev/api/reset
+```
+
+Restores seed availability (properties **102, 107, 112** unavailable; others available) and deletes all reservations.
+
+### Local Workers preview
+
+```bash
+npm run cf:dev
+# or: cd cloudflare && npx wrangler dev
+```
+
+See `cloudflare/README.md` for module details and `schema.sql`.
 
 ## Milestone 1 Goal
 

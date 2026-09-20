@@ -1,0 +1,15 @@
+name = "cecs327-lodging"
+main = "src/index.ts"
+compatibility_date = "2026-09-20"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cecs327-lodging"
+database_id = "0349fd11-02aa-4509-bcc5-ec72f06bb7a1"
+
+[assets]
+binding = "ASSETS"
+directory = "../frontend/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
