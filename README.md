@@ -6,6 +6,21 @@ Milestone 1 project for CECS 327, Section 02 at California State University, Lon
 
 **Milestone 1 due:** September 24, 2026
 
+## Live demo
+
+Try the hosted Milestone 1 UI (Cloudflare Worker + D1):
+
+| | |
+|---|---|
+| **Primary** | [https://lodging.pitchblack.icu](https://lodging.pitchblack.icu) |
+| Apex | [https://pitchblack.icu](https://pitchblack.icu) |
+| WWW | [https://www.pitchblack.icu](https://www.pitchblack.icu) |
+| Workers.dev | [https://cecs327-lodging.tommalter5.workers.dev](https://cecs327-lodging.tommalter5.workers.dev) |
+
+[![Distributed Lodging demo preview](screenshots/demo-preview.png)](https://lodging.pitchblack.icu)
+
+*Click the preview to open the live site. Features: search, property cards, book/cancel, hard reset (double confirm), colorized service logs, and a live React state panel.*
+
 ## Project
 
 We are building a distributed lodging reservation system similar to Airbnb. Guests will be able to search properties and make reservations, while hosts will be able to create listings and manage availability.
