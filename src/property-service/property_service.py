@@ -1,11 +1,29 @@
 import socket
 import json
 from pathlib import Path
+from datetime import datetime
 
 HOST = "127.0.0.1"
 PORT = 5001
+RECV_BUFFER = 65536
 
-DATA_FILE = Path(__file__).resolve().parents[2] / "data" / "properties.json"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_FILE = ROOT / "data" / "properties.json"
+LOG_FILE = ROOT / "logs" / "property.log"
+
+
+def log(message):
+    line = f"[PROPERTY] {message}"
+    print(line)
+    try:
+        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "ts": datetime.now().isoformat(),
+                "message": message
+            }) + "\n")
+    except OSError:
+        pass
 
 
 def load_properties():
@@ -17,57 +35,71 @@ def find_property(properties, property_id):
     for property_data in properties:
         if property_data["id"] == property_id:
             return property_data
-
     return None
 
 
+def handle_get_property(request):
+    property_id = request.get("property_id")
+    if property_id is None:
+        return {"status": "error", "message": "property_id is required"}
+
+    properties = load_properties()
+    property_data = find_property(properties, property_id)
+
+    if property_data is None:
+        return {"status": "error", "message": "Property not found"}
+
+    return {"status": "success", "property": property_data}
+
+
+def handle_list_properties():
+    properties = load_properties()
+    return {"status": "success", "properties": properties}
+
+
 def handle_client(connection, address):
-    print(f"[PROPERTY] Connected by {address}")
+    log(f"Connected by {address}")
 
-    data = connection.recv(1024)
-
+    data = connection.recv(RECV_BUFFER)
     if not data:
         return
 
     request = json.loads(data.decode("utf-8"))
+    log(f"Received: {request}")
 
-    print(f"[PROPERTY] Received: {request}")
+    action = request.get("action")
 
-    properties = load_properties()
-
-    property_id = request["property_id"]
-    property_data = find_property(properties, property_id)
-
-    if property_data is None:
-        response = {
-            "status": "error",
-            "message": "Property not found"
-        }
+    # Backward compatible: no action + property_id => get_property
+    if action in (None, "", "get_property", "check_availability"):
+        if "property_id" in request:
+            response = handle_get_property(request)
+        elif action == "list_properties":
+            response = handle_list_properties()
+        else:
+            response = {"status": "error", "message": "Unknown or missing action"}
+    elif action == "list_properties":
+        response = handle_list_properties()
     else:
-        response = {
-            "status": "success",
-            "property": property_data
-        }
+        response = {"status": "error", "message": f"Unknown action: {action}"}
 
-    connection.sendall(
-        json.dumps(response).encode("utf-8")
-    )
-
-    print(f"[PROPERTY] Sent: {response}")
+    connection.sendall(json.dumps(response).encode("utf-8"))
+    log(f"Sent: {response}")
 
 
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
         server_socket.listen()
-
-        print(f"[PROPERTY] Listening on {HOST}:{PORT}")
+        log(f"Listening on {HOST}:{PORT}")
 
         while True:
             connection, address = server_socket.accept()
-
             with connection:
-                handle_client(connection, address)
+                try:
+                    handle_client(connection, address)
+                except Exception as exc:
+                    log(f"Error handling client: {exc}")
 
 
 if __name__ == "__main__":

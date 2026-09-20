@@ -1,0 +1,172 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.panel {
+  background: #f7f7f8;
+  border: 1px solid #e2e2e5;
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.panel-header h2,
+.panel h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.guest-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  max-width: 240px;
+}
+
+.guest-label input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.property-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.property-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.property-card.unavailable {
+  opacity: 0.75;
+}
+
+.property-info h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.property-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge.ok {
+  background: #e6f6ea;
+  color: #1b7a36;
+}
+
+.badge.no {
+  background: #fdecea;
+  color: #a12622;
+}
+
+.btn {
+  border: 1px solid #bbb;
+  background: #eee;
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn.primary {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #fff;
+}
+
+.muted {
+  color: #666;
+}
+
+.error {
+  color: #a12622;
+}
+
+.result.accepted {
+  border-color: #8fd19e;
+  background: #f0faf3;
+}
+
+.result.rejected {
+  border-color: #f0b4b0;
+  background: #fdf4f3;
+}
+
+.detail-list {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+}
+
+.log-panel {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

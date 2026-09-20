@@ -1,5 +1,13 @@
 # Client
 
-Starts the request flow for the Milestone 1 demo.
+TCP demo client for Milestone 1. The primary UI is the React frontend under `/frontend`.
 
-For the first demo, the client should be able to send a simple request and print the response it receives.
+## Run
+
+Requires Property and Reservation services (and Payment if booking).
+
+```bash
+python src/client/client.py              # check availability for 101
+python src/client/client.py list         # list properties
+python src/client/client.py book 101 Tom # book property 101
+```

@@ -22,3 +22,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/

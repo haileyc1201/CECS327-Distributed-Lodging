@@ -1,7 +1,6 @@
-# Shared Data
+# Data
 
-This folder is for local project data used by the prototype.
+- `properties.json` — shared property listings (availability updated on successful booking)
+- `reservations.json` — persisted reservations created by the Reservation Service
 
-The report describes shared persistent storage for important information such as properties and reservations. The exact storage format can be decided by the team during implementation.
-
-Do not put passwords, private keys, or real payment information here.
+For a clean demo, set properties back to `available: true` and reset `reservations.json` to `[]`.

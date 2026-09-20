@@ -1,5 +1,18 @@
 # Reservation Service
 
-Responsible for reservation requests and checking for conflicting bookings.
+Reservation requests over TCP JSON on `127.0.0.1:5002`.
 
-For Milestone 1, this service should participate in the request flow, communicate with the other services, and log messages.
+Calls Property Service (`:5001`) and Payment Service (`:5003`).
+
+## Run
+
+```bash
+python src/reservation-service/reservation_service.py
+```
+
+## Actions
+
+- `check_availability` — verify property exists and is available
+- `book` / `create_reservation` — check property → process payment → persist reservation → mark property unavailable
+
+Persists to `data/reservations.json` and updates `data/properties.json`.
