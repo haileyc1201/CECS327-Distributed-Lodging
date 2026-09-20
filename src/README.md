@@ -1,17 +1,12 @@
 # Source Code
 
-Place implementation code under this directory.
+Milestone 1 uses these folders:
 
-The team must create at least three communicating processes/services for Milestone 1.
+- `client/`
+- `property-service/`
+- `reservation-service/`
+- `payment-service/`
 
-The exact service decomposition is not fixed in this repository yet. Once the team agrees on the architecture, create one folder per service under `src/services/` and document how to run each service in the main README.
+Each service should be able to run as its own process and communicate with the others.
 
-Example only:
-
-```text
-src/
-└── services/
-    ├── service_a/
-    ├── service_b/
-    └── service_c/
-```
+Once the prototype is working, add the exact start commands to the main README.

@@ -1,43 +1,36 @@
-# Contributing
+# Working on the Repo
 
-This repository is shared by the CECS 327 Distributed Lodging team.
+Try to work on your own branch instead of editing `main` directly.
 
-## Before you start
-
-1. Clone the repository.
-2. Pull the newest changes.
-3. Create your own branch.
-4. Make one focused set of changes.
-5. Commit and push your branch.
-6. Open a Pull Request.
-
-## Example
+## Start
 
 ```bash
 git pull
-git checkout -b hailey-milestone1-report
-# make changes
-git add .
-git commit -m "Add Milestone 1 report outline"
-git push -u origin hailey-milestone1-report
+git checkout -b yourname-task
 ```
 
-## Avoid merge problems
+Example:
 
-- Do not edit the same file at the same time without coordinating.
+```bash
+git checkout -b hailey-report
+```
+
+## Save your work
+
+```bash
+git status
+git add .
+git commit -m "Update Milestone 1 report"
+git push -u origin yourname-task
+```
+
+After that, open a pull request on GitHub.
+
+A few things that will save us headaches:
+
 - Pull before starting new work.
-- Use clear commit messages.
-- Do not commit passwords, API keys, access tokens, or private credentials.
-- Put generated logs in `logs/` and screenshots in `screenshots/`.
-- Keep architecture documentation in `docs/`.
-
-## Suggested branch names
-
-- `name-property-service`
-- `name-reservation-service`
-- `name-payment-service`
-- `name-architecture-diagram`
-- `name-report`
-- `name-readme`
-
-The examples above are suggestions, not fixed service requirements.
+- Let the group know before editing the same file as someone else.
+- Do not commit passwords, API keys, or access tokens.
+- Put logs in `logs/`.
+- Put screenshots in `screenshots/`.
+- Put the architecture diagram in `docs/diagrams/`.

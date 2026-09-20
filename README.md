@@ -1,96 +1,84 @@
-# CECS327 Distributed Lodging
+# CECS 327 Distributed Lodging
 
-Semester project for **CECS 327: Introduction to Networks and Distributed Computing**.
+Milestone 1 project for CECS 327, Section 02 at California State University, Long Beach.
 
-## Project scope
+**Team:** Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter, and Anthony Torres
 
-This project is a distributed lodging-reservation system inspired by Airbnb.
+**Milestone 1 due:** September 24, 2026
 
-The course requirements for this project include distributed management of:
+## Project
 
-- users
-- properties
-- availability
-- reservations
-- reviews
-- payments
+We are building a distributed lodging reservation system similar to Airbnb. Guests will be able to search properties and make reservations, while hosts will be able to create listings and manage availability.
 
-The system must also demonstrate:
+For Milestone 1, we are starting with three backend services:
 
-- communication among services
-- coordination of simultaneous booking requests
-- replicated information
-- transactional reservations
-- recovery from failures
+- Property Service
+- Reservation Service
+- Payment Service
 
-## Milestone 1: Architecture and Models
+The client starts the request. The basic flow for this milestone is:
 
-For Milestone 1, the group must:
+```text
+Client
+  -> Property Service
+  -> Reservation Service
+  -> Payment Service
+  -> Reservation result
+```
 
-- describe the purpose of the system
-- identify the main services/components
-- identify clients, servers, peers, and shared resources
-- define the system model
-- create an architecture diagram
-- explain scalability, dependability, and resource sharing
-- create a basic running skeleton with at least three communicating processes/services
-- show a simple client request and server response
-- log messages exchanged between components
+We also use shared persistent storage for important data such as properties and reservations.
 
-See [docs/milestone-1/README.md](docs/milestone-1/README.md) for the working checklist.
+User Service and Review Service are planned for later milestones.
 
-## Repository layout
+## Repository Structure
 
 ```text
 .
 ├── docs/
 │   ├── diagrams/
 │   └── milestone-1/
+│       ├── 01-system-overview.md
+│       ├── 02-architecture.md
+│       ├── 03-components.md
+│       ├── 04-system-model.md
+│       └── 05-communication-flow.md
 ├── src/
-│   └── services/
+│   ├── client/
+│   ├── property-service/
+│   ├── reservation-service/
+│   └── payment-service/
+├── data/
 ├── logs/
 ├── screenshots/
-├── CONTRIBUTING.md
 └── README.md
 ```
 
-The exact service breakdown is intentionally not locked in yet. The team should agree on the architecture before naming or implementing the final service folders.
+## Milestone 1 Goal
 
-## Clone the repository
+The Milestone 1 prototype needs at least three communicating processes or services, a simple client request, a server response, and logs showing the messages exchanged.
+
+## Clone the Repository
 
 ```bash
 git clone https://github.com/haileyc1201/CECS327-Distributed-Lodging.git
 cd CECS327-Distributed-Lodging
 ```
 
-## Beginner workflow
+## Working on the Project
 
-Do not make large changes directly on `main`. Create a branch for your work:
+Before starting work:
 
 ```bash
 git pull
 git checkout -b yourname-task
 ```
 
-After you make changes:
+After making changes:
 
 ```bash
-git status
 git add .
 git commit -m "Describe what you changed"
 git push -u origin yourname-task
 ```
 
-Then open a Pull Request on GitHub so the team can review and merge the work.
-
-## Team rule
-
-Before coding, agree on:
-
-1. the three or more services/processes used in the Milestone 1 prototype
-2. what each service owns
-3. how they communicate
-4. what request/response will be demonstrated
-5. what data is shared or persistent
-
-Keep the report, architecture diagram, and implementation consistent with one another.
+Then open a pull request on GitHub so the change can be merged into `main`.
