@@ -18,7 +18,7 @@ def load_properties() -> list[dict]:
 def get_property_price(property_id: int) -> float | None: # Price per night, default none.
     for prop in load_properties():
         if prop["id"] == property_id:
-            return prop.get("price_per_night")
+            return prop.get("price")
     return None
 
 def request_reservation(property_id) -> dict:  # Checks availability for a reservation.
