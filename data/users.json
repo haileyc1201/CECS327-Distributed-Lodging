@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Tom",
+    "reservations" : []
+    "listings" : []
+  },
+  {
+    "id": 2,
+    "name": "Andrew",
+    "reservations" : []
+    "listings" : []
+  },
+  {
+    "id": 3,
+    "name": "Hailey",
+    "reservations" : []
+    "listings" : []
+  }
+]
