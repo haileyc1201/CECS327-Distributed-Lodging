@@ -316,7 +316,7 @@ ALL CHECKS PASSED
  "wire": "{\"id\":\"d87f3922dadb\",\"type\":\"event\",\"sender\":\"comm-hub\",\"receiver\":\"notification-service\",\"timestamp\":\"2026-10-12T23:23:16.502Z\",\"correlation_id\":null,\"payload\":{\"topic\":\"booking.created\",\"seq\":1,\"publisher\":\"worker-gateway\",\"event\":{\"reservation_id\":\"res-1e2bc68a\",\"property_id\":101,\"property_name\":\"Long Beach Apartment\",\"guest_name\":\"Demo ce07\",\"amount\":150,\"payment_id\":\"pay-b670474e\",\"refund_id\"\u2026"
 }
 ```
-**Deployment status:** the Worker passes every check under `wrangler dev`, but it is **not deployed**. `wrangler deploy` failed 6+ times on 2026-10-12 (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls with the same token work. The live site still serves the Milestone 1 build. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm run cf:test`.
+**Deployment status:** the Worker passes every check under `wrangler dev`, but it is **not deployed**. `wrangler deploy` failed 9 times on 2026-10-12 (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls with the same token work. The live site still serves the Milestone 1 build. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm run cf:test`.
 
 
 ## 10. Test cases
@@ -332,7 +332,59 @@ ALL CHECKS PASSED
 
 Results: Python **Ran 10 tests — OK**; Node **7/7 pass**; Worker **all demo checks passed (local wrangler dev)**. The raw outputs are in `docs/logs/*-test-results.txt` and `docs/logs/worker-local-demo-output.txt`.
 
-## 11. Contribution table
+## 12. Screenshots
+
+All screenshots come from real runs on 2026-10-12. Terminal output was rendered to PNG, and the UI was captured with headless Chrome. The files are in `docs/milestone-2/screenshots/`.
+
+**Figure 01: Python demo, full run (10 processes)**
+
+![Python demo, full run (10 processes)](screenshots/01_python_demo_full_run.png)
+
+**Figure 02: Request-reply: JSON-RPC over TCP**
+
+![Request-reply: JSON-RPC over TCP](screenshots/02_request_reply_jsonrpc_tcp.png)
+
+**Figure 03: Marshalling before/after (JSON + XML)**
+
+![Marshalling before/after (JSON + XML)](screenshots/03_marshalling_before_after.png)
+
+**Figure 04: Pub-sub: booking.created to 3 subscribers**
+
+![Pub-sub: booking.created to 3 subscribers](screenshots/04_pubsub_three_subscribers.png)
+
+**Figure 05: Group communication: multicast, acks, membership, failure**
+
+![Group communication: multicast, acks, membership, failure](screenshots/05_group_multicast_membership.png)
+
+**Figure 06: ISO-8601 timestamped messages.jsonl**
+
+![ISO-8601 timestamped messages.jsonl](screenshots/06_timestamped_message_log.png)
+
+**Figure 07: Python tests (10/10)**
+
+![Python tests (10/10)](screenshots/07_python_tests_passing.png)
+
+**Figure 08: Node comm demo**
+
+![Node comm demo](screenshots/08_node_comm_demo.png)
+
+**Figure 09: Node tests (7/7)**
+
+![Node tests (7/7)](screenshots/09_node_tests_passing.png)
+
+**Figure 10a: Worker under wrangler dev: 20/20 checks**
+
+![Worker under wrangler dev: 20/20 checks](screenshots/10a_worker_local_tests.png)
+
+**Figure 10b: Worker GET /api/comm/logs JSON**
+
+![Worker GET /api/comm/logs JSON](screenshots/10b_worker_comm_logs_json.png)
+
+**Figure 11: React UI (local stack) after a booking made through /api/rpc**
+
+![React UI (local stack) after a booking made through /api/rpc](screenshots/11_react_ui.png)
+
+## 13. Contribution table
 
 | Member | Contribution (communication milestone) |
 |---|---|

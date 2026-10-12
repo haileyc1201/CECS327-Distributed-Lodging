@@ -66,7 +66,8 @@ class GroupCoordinator(FramedServer):
         return delivered, failed
 
     def _announce_view(self, group: str) -> None:
-        view = {"group": group, "view_id": next(self._view), "members": self.members(group)}
+        with self._lock:  # view id and member list are taken atomically
+            view = {"group": group, "view_id": next(self._view), "members": sorted(self.groups.get(group, {}))}
         self._fanout(group, "group.view", view)
 
     def handle(self, conn, message, fmt, peer) -> bool:
@@ -121,6 +122,7 @@ class GroupMember(FramedServer):
         self.group, self.coord = group, (coord_host, coord_port)
         self.delivered: list[dict] = []
         self.view: list[str] = []
+        self.view_id = 0
         self.on_message = on_message
         self.state: dict = {}
 
@@ -131,7 +133,9 @@ class GroupMember(FramedServer):
             if self.on_message:
                 self.on_message(self, body["message"])
         elif message.get("type") == "group.view":
-            self.view = body["members"]
+            # views can arrive out of order; only install a newer one
+            if body["view_id"] > self.view_id:
+                self.view_id, self.view = body["view_id"], body["members"]
         else:
             return False
         ack = make_envelope("group.ack", self.name, {"seq": body.get("seq", body.get("view_id")), "member": self.name},

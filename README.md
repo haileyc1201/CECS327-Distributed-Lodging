@@ -104,6 +104,25 @@ Latest result: `Ran 10 tests ... OK` (see `docs/logs/python-test-results.txt`).
 - Runtime logs are written to `logs/messages.jsonl` (git-ignored).
 - No video for this milestone.
 
+## Screenshots
+
+These are from real runs; all files are in [`docs/milestone-2/screenshots/`](docs/milestone-2/screenshots).
+
+| # | Screenshot |
+|---|---|
+| 01 | [Python demo, full run (10 processes)](docs/milestone-2/screenshots/01_python_demo_full_run.png) |
+| 02 | [Request-reply: JSON-RPC over TCP](docs/milestone-2/screenshots/02_request_reply_jsonrpc_tcp.png) |
+| 03 | [Marshalling before/after (JSON + XML)](docs/milestone-2/screenshots/03_marshalling_before_after.png) |
+| 04 | [Pub-sub: booking.created to 3 subscribers](docs/milestone-2/screenshots/04_pubsub_three_subscribers.png) |
+| 05 | [Group communication: multicast, acks, membership, failure](docs/milestone-2/screenshots/05_group_multicast_membership.png) |
+| 06 | [ISO-8601 timestamped messages.jsonl](docs/milestone-2/screenshots/06_timestamped_message_log.png) |
+| 07 | [Python tests (10/10)](docs/milestone-2/screenshots/07_python_tests_passing.png) |
+| 08 | [Node comm demo](docs/milestone-2/screenshots/08_node_comm_demo.png) |
+| 09 | [Node tests (7/7)](docs/milestone-2/screenshots/09_node_tests_passing.png) |
+| 10a | [Worker under wrangler dev: 20/20 checks](docs/milestone-2/screenshots/10a_worker_local_tests.png) |
+| 10b | [Worker GET /api/comm/logs JSON](docs/milestone-2/screenshots/10b_worker_comm_logs_json.png) |
+| 11 | [React UI (local stack) after a booking made through /api/rpc](docs/milestone-2/screenshots/11_react_ui.png) |
+
 ## Contribution Table
 
 | Member | Milestone 2 contribution |
