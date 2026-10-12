@@ -2,6 +2,7 @@
 export type Env = {
   DB: D1Database
   ASSETS: Fetcher
+  COMM_HUB: DurableObjectNamespace<import('./comm/hub').CommHub>
 }
 
 export type Property = {

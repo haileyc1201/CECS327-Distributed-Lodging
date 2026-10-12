@@ -10,6 +10,7 @@ const HOST = process.env.GATEWAY_HOST || '127.0.0.1';
 const PORT = Number(process.env.GATEWAY_PORT || 8000);
 const PROPERTY_URL = process.env.PROPERTY_URL || 'http://127.0.0.1:5001';
 const RESERVATION_URL = process.env.RESERVATION_URL || 'http://127.0.0.1:5002';
+const HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:5010';
 
 const app = express();
 app.use(cors());
@@ -133,6 +134,29 @@ app.get('/api/logs', (_req, res) => {
     res.json({ status: 'ok', logs });
   } catch (err) {
     res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// Communication milestone: JSON-RPC + message log via the comm hub
+app.post('/api/rpc', express.text({ type: '*/*' }), async (req, res) => {
+  try {
+    const r = await fetch(`${HUB_URL}/rpc`, {
+      method: 'POST',
+      headers: { 'Content-Type': req.headers['content-type'] || 'application/json' },
+      body: typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
+    });
+    res.status(r.status).type(r.headers.get('content-type') || 'application/json').send(await r.text());
+  } catch (err) {
+    res.status(502).json({ status: 'error', message: err.message });
+  }
+});
+
+app.get('/api/comm/logs', async (req, res) => {
+  try {
+    const { data } = await proxyJson(`${HUB_URL}/logs?limit=${Number(req.query.limit) || 200}`);
+    res.json(data);
+  } catch (err) {
+    res.status(502).json({ status: 'error', message: err.message });
   }
 });
 

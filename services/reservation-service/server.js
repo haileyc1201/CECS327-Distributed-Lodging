@@ -15,6 +15,29 @@ const HOST = process.env.RESERVATION_HOST || '127.0.0.1';
 const PORT = Number(process.env.RESERVATION_PORT || 5002);
 const PROPERTY_URL = process.env.PROPERTY_URL || 'http://127.0.0.1:5001';
 const PAYMENT_URL = process.env.PAYMENT_URL || 'http://127.0.0.1:5003';
+const HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:5010';
+const { makeEnvelope, makeLogger, sendMessage } = require('../shared/messaging');
+const msgLogger = makeLogger('reservation-service');
+
+/** Communication milestone: publish booking.created + multicast to property replicas. */
+async function announceBooking(reservation) {
+  const out = { notified_subscribers: [], replicas_updated: [] };
+  try {
+    const pub = await sendMessage(msgLogger, `${HUB_URL}/publish`,
+      makeEnvelope('publish', 'reservation-service', { topic: 'booking.created', event: reservation }));
+    out.notified_subscribers = pub.payload.delivered_to;
+    const mc = await sendMessage(msgLogger, `${HUB_URL}/group/multicast`,
+      makeEnvelope('group.multicast', 'reservation-service', {
+        group: 'property-replicas',
+        message: { op: 'availability_update', property_id: reservation.property_id, available: false,
+          reservation_id: reservation.reservation_id },
+      }));
+    out.replicas_updated = mc.payload.delivered_to;
+  } catch (err) {
+    log(`comm hub unavailable: ${err.message}`);
+  }
+  return out;
+}
 
 const app = express();
 app.use(express.json());
@@ -140,12 +163,14 @@ app.post('/reservations', async (req, res) => {
     saveReservations(reservations);
     await setAvailability(propertyId, false);
     log(`Saved ${reservation.reservation_id}; property ${propertyId} unavailable`);
+    const comm = await announceBooking(reservation);
 
     return res.json({
       status: 'accepted',
       message: 'Reservation confirmed',
       reservation,
       payment: paymentResponse,
+      ...comm,
     });
   } catch (err) {
     log(`book error: ${err.message}`);

@@ -10,6 +10,18 @@ binding = "DB"
 database_name = "cecs327-lodging"
 database_id = "0349fd11-02aa-4509-bcc5-ec72f06bb7a1"
 
+# Communication milestone: pub-sub broker + group coordinator
+[[durable_objects.bindings]]
+name = "COMM_HUB"
+class_name = "CommHub"
+
+[[migrations]]
+tag = "v1-comm-hub"
+new_sqlite_classes = ["CommHub"]
+
+[observability]
+enabled = true
+
 [assets]
 binding = "ASSETS"
 directory = "../frontend/dist"

@@ -8,14 +8,18 @@
     "payment": "node services/payment-service/server.js",
     "reservation": "node services/reservation-service/server.js",
     "gateway": "node services/gateway/server.js",
-    "services": "concurrently -k -n property,payment,reservation,gateway -c blue,magenta,green,yellow \"npm run property\" \"npm run payment\" \"npm run reservation\" \"npm run gateway\"",
+    "services": "concurrently -k -n property,payment,reservation,gateway,hub -c blue,magenta,green,yellow,red \"npm run property\" \"npm run payment\" \"npm run reservation\" \"npm run gateway\" \"npm run hub\"",
     "frontend": "npm run dev --prefix frontend",
-    "start": "concurrently -k -n property,payment,reservation,gateway,frontend -c blue,magenta,green,yellow,cyan \"npm run property\" \"npm run payment\" \"npm run reservation\" \"npm run gateway\" \"npm run frontend\"",
+    "start": "concurrently -k -n property,payment,reservation,gateway,hub,frontend -c blue,magenta,green,yellow,red,cyan \"npm run property\" \"npm run payment\" \"npm run reservation\" \"npm run gateway\" \"npm run hub\" \"npm run frontend\"",
     "install:all": "npm install && npm install --prefix frontend",
     "cf:install": "npm install --prefix cloudflare && npm install --prefix frontend",
     "cf:build": "VITE_DEPLOY_TARGET=cloudflare npm run build --prefix frontend",
     "cf:dev": "npm run cf:build && npm run dev --prefix cloudflare",
-    "cf:deploy": "npm run cf:build && npm run deploy --prefix cloudflare"
+    "cf:deploy": "npm run cf:build && npm run deploy --prefix cloudflare",
+    "hub": "node services/comm-hub/server.js",
+    "comm:demo": "node scripts/comm-demo.js",
+    "test": "node --test tests/comm.test.js",
+    "cf:test": "npm run test --prefix cloudflare"
   },
   "dependencies": {
     "cors": "^2.8.5",

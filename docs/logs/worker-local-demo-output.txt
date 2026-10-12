@@ -1,0 +1,63 @@
+
+=== target http://127.0.0.1:8787 ================================
+  [PASS] GET /api/health
+
+=== 1. request-reply over HTTP JSON-RPC =========================
+  101 -> {"property_id":101,"name":"Long Beach Apartment","available":true,"price":150}
+  [PASS] 101 available
+  102 -> {"property_id":102,"name":"Downtown Studio","available":false,"price":120}
+  [PASS] 102 unavailable
+  103 XML reply -> <message><envelope t="dict"><entry key="id"><value t="str">8a664548f673</value></entry><entry key="type"><value t="str">rpc.reply</value></e...
+  [PASS] XML reply is XML envelope
+  [PASS] 404 error object
+  [PASS] unknown method -32601
+
+=== 2. group membership =========================================
+  members: [ 'replica-a-1360', 'replica-b-1360', 'replica-ws-1360' ]
+  [PASS] 3 replicas joined (2 mailbox + 1 websocket)
+  booking.created subscribers: [
+  'analytics-service',
+  'audit-service',
+  'notification-service',
+  'ws-subscriber-1-1360',
+  'ws-subscriber-2-1360'
+]
+  [PASS] >= 5 subscribers (3 built-in + 2 websocket)
+
+=== 3. booking -> pub-sub + multicast ===========================
+  status accepted res-3b8716ac
+  notified_subscribers [
+  'analytics-service',
+  'audit-service',
+  'notification-service',
+  'ws-subscriber-1-1360',
+  'ws-subscriber-2-1360'
+]
+  replicas_updated [ 'replica-a-1360', 'replica-b-1360', 'replica-ws-1360' ]
+  [PASS] booking accepted
+  [PASS] built-in + websocket subscribers notified
+  [PASS] all 3 replicas got multicast
+  [PASS] ws subscriber 1 received event
+  [PASS] ws subscriber 2 received event
+  [PASS] ws replica received group.deliver
+  [PASS] mailbox replica inbox has the update
+  [PASS] double booking rejected
+
+=== 4. failure / leave: websocket replica disconnects ===========
+  members now: [ 'replica-a-1360', 'replica-b-1360' ]
+  [PASS] closed websocket member removed from view
+
+=== 5. message log (GET /api/comm/logs) =========================
+  212 recent entries, 102 from this run
+  2026-10-12T23:24:15.352Z [worker-gateway] RECV 127.0.0.1 rpc.request
+  2026-10-12T23:24:15.356Z [worker-gateway] SEND 127.0.0.1 rpc.reply
+  2026-10-12T23:24:15.363Z [worker-gateway] RECV 127.0.0.1 rpc.request
+  2026-10-12T23:24:15.365Z [worker-gateway] SEND 127.0.0.1 rpc.reply
+  2026-10-12T23:24:15.375Z [worker-gateway] RECV 127.0.0.1 rpc.request
+  2026-10-12T23:24:15.379Z [worker-gateway] SEND 127.0.0.1 rpc.reply
+  2026-10-12T23:24:15.385Z [worker-gateway] RECV 127.0.0.1 rpc.request
+  2026-10-12T23:24:15.389Z [worker-gateway] SEND 127.0.0.1 rpc.reply
+  [PASS] every entry has ISO-8601 ts
+  [PASS] log has SEND and RECV for this run
+
+ALL CHECKS PASSED

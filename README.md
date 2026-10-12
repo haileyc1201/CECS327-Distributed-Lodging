@@ -57,6 +57,9 @@ User Service and Review Service are planned for later milestones.
 | Payment Service      | 5003 |
 | HTTP Gateway         | 8000 |
 | React (Vite)         | 5173 |
+| Comm Hub (RPC, pub-sub, group) | 5010 |
+| Subscribers (notification / analytics / audit) | 5101-5103 |
+| Group members (replica-1..3) | 5201-5203 |
 
 ## Repository Structure
 
@@ -89,7 +92,9 @@ User Service and Review Service are planned for later milestones.
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ and npm (local services and tests)
+- Node.js 22+ for the Cloudflare Worker (`wrangler dev` / `wrangler deploy`) and the hosted test script
+- Optional: a Cloudflare account and `CLOUDFLARE_API_TOKEN` to deploy
 
 One-time setup from the repo root:
 
@@ -226,6 +231,94 @@ npm run cf:dev
 ```
 
 See `cloudflare/README.md` for module details and `schema.sql`.
+
+## Communication Milestone (RPC, pub-sub, group communication, logging)
+
+The full report is in [`docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf`](docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf) ([markdown](docs/communication-milestone/CECS327_Communication_Milestone_Report.md)). Real run logs are in [`docs/logs/`](docs/logs). The Python-socket version of the same protocol lives on `main`.
+
+| Requirement | Local Node stack | Cloudflare Worker |
+|---|---|---|
+| Marshalling (JSON + typed XML), before/after logged | `services/shared/messaging.js` | `cloudflare/src/comm/marshal.ts` |
+| RPC (JSON-RPC 2.0 over HTTP) | `POST :8000/api/rpc` → Comm Hub `/rpc` | `POST /api/rpc` |
+| Request-reply | `availability.check`, `property.get`, `reservation.book` | same |
+| Publish-subscribe, multiple subscribers | `booking.created` → 3 subscriber processes | `CommHub` Durable Object → 3 built-in + any WebSocket subscribers (`/api/comm/ws?role=subscriber`) |
+| Group communication + membership | group `property-replicas`, 3 replica processes, join/leave/view/failure detection | DO coordinator. Mailbox members (`/api/group/*`) and WebSocket members (`/api/comm/ws?role=member`) |
+| ISO-8601 logging of every send/receive | `logs/messages.jsonl`, `GET /api/comm/logs` | D1 table `message_log`, `GET /api/comm/logs` |
+
+### Install dependencies
+
+```bash
+npm run install:all                 # root + frontend
+npm install --prefix cloudflare     # Worker (Node 22+)
+```
+
+### Start each service
+
+```bash
+./start-lodging.sh                  # everything, incl. hub, 3 subscribers, 3 replicas
+# or separately:
+npm run property      # :5001
+npm run payment       # :5003
+npm run hub           # :5010
+npm run reservation   # :5002
+npm run gateway       # :8000
+node services/comm-hub/node.js subscriber notification-service 5101 booking.created
+node services/comm-hub/node.js subscriber analytics-service    5102 booking.created
+node services/comm-hub/node.js subscriber audit-service        5103 booking.created
+node services/comm-hub/node.js member replica-1 5201 property-replicas
+node services/comm-hub/node.js member replica-2 5202 property-replicas
+node services/comm-hub/node.js member replica-3 5203 property-replicas
+npm run frontend      # :5173
+```
+
+Example RPC call:
+
+```bash
+curl -s localhost:8000/api/rpc -H 'content-type: application/json' -d '{"id":"x1","type":"rpc.request","sender":"curl","receiver":null,"timestamp":"2026-10-12T00:00:00.000Z","correlation_id":null,"payload":{"jsonrpc":"2.0","method":"availability.check","params":{"property_id":101},"id":1}}'
+```
+
+### Run the demo
+
+```bash
+npm run comm:demo        # starts all 11 processes, runs RPC (JSON + XML), booking, pub-sub, multicast, kills a replica, prints logs
+```
+
+Hosted / Worker demo:
+
+```bash
+npm run cf:build && cd cloudflare && npx wrangler dev           # http://127.0.0.1:8787
+BASE_URL=http://127.0.0.1:8787 npm test                          # in cloudflare/
+npm run cf:deploy                                                # deploy (needs Cloudflare credentials)
+BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare
+```
+
+### Reproduce the test cases
+
+```bash
+npm test                                   # Node: TC1-TC6 (node:test), 7 tests
+BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks (needs wrangler dev or a deployed URL)
+```
+
+| # | Test case |
+|---|---|
+| TC1 | JSON and XML marshal/unmarshal round-trip keeps types; ISO-8601 envelope timestamp |
+| TC2 | Request-reply `availability.check` / `property.get` in JSON and XML; 404 and -32601 errors |
+| TC3 | Booking notifies all subscribers and multicasts to all replicas; double booking rejected |
+| TC4 | Group failure detection (killed replica removed), graceful leave, view update |
+| TC5 | Pub-sub topic filtering |
+| TC6 | Every log entry ISO-8601; SEND entries carry before/after marshalling; `/api/comm/logs` serves them |
+
+### Contribution table
+
+| Member | Contribution |
+|---|---|
+| _Member 1_ | _TBD_ |
+| _Member 2_ | _TBD_ |
+| _Member 3_ | _TBD_ |
+| _Member 4_ | _TBD_ |
+| _Member 5_ | _TBD_ |
+| _Member 6_ | _TBD_ |
+| _Member 7_ | _TBD_ |
 
 ## Milestone 1 Goal
 

@@ -36,3 +36,4 @@ cloudflare/node_modules/
 cloudflare/.wrangler/
 cloudflare/.wrangler-bundle/
 .wrangler/
+logs/*.jsonl

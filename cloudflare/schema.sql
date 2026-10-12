@@ -35,3 +35,19 @@ INSERT OR REPLACE INTO properties (id, name, price, available, city, beds) VALUE
   (110, 'Arts District Flat', 180, 1, 'Los Angeles', 1),
   (111, 'Koreatown Suite', 140, 1, 'Los Angeles', 1),
   (112, 'Pasadena Guest House', 255, 0, 'Pasadena', 3);
+
+-- Communication milestone: ISO-8601 message log (also auto-created by the Worker)
+CREATE TABLE IF NOT EXISTS message_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL,
+  node TEXT NOT NULL,
+  event TEXT NOT NULL,
+  peer TEXT,
+  format TEXT,
+  bytes INTEGER,
+  msg_type TEXT,
+  msg_id TEXT,
+  note TEXT,
+  message TEXT,
+  wire TEXT
+);

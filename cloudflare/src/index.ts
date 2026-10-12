@@ -14,6 +14,10 @@ import {
 } from './services/reservationService'
 import { findProperty, listProperties } from './services/propertyService'
 import type { Env } from './types'
+import { announceBooking, comm } from './comm/routes'
+import { MessageLog } from './comm/msglog'
+
+export { CommHub } from './comm/hub'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -71,6 +75,12 @@ app.post('/api/reservations', async (c) => {
       body.property_id,
       body.guest_name || 'Guest',
     )
+    if (data.status === 'accepted') {
+      // communication milestone: booking.created pub-sub + replica multicast
+      const log = new MessageLog(c.env.DB)
+      Object.assign(data, await announceBooking(c.env, log, data.reservation as Record<string, unknown>))
+      c.executionCtx.waitUntil(log.flush())
+    }
     return c.json(data, httpStatus as 200 | 400 | 502)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
@@ -142,6 +152,9 @@ app.get('/api/logs', (c) => {
     return c.json({ status: 'error', message }, 500)
   }
 })
+
+// Communication milestone routes (RPC, pub-sub, group, WebSocket, message log)
+app.route('/api', comm)
 
 // Path aliases: /lodging → same app (API + UI)
 app.get('/lodging', (c) => c.redirect('/', 302))
