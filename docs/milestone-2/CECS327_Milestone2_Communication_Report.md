@@ -115,7 +115,7 @@ Topic filtering is tested: a publish on `other.topic` reaches nobody.
 | Members | replica-1..3, each with its own TCP listener | replica-1..3 HTTP processes | mailbox members (HTTP join + inbox) and WebSocket members |
 | Membership ops | `group.join/leave/members`; every change → `group.view {view_id, members}` to all | same | same + `group.heartbeat` lease (10 min) |
 | Multicast | Coordinator sends a numbered `group.deliver` to every member and waits for `group.ack`. Replies `{seq, delivered_to, failed}` | same | WebSocket send / mailbox enqueue |
-| Failure detection | Unreachable member is removed and a new view announced | same | Closed socket or expired lease is removed and a new view announced |
+| Failure detection | Unreachable member (refused, closed or timed-out connection) is logged as an INFO `delivery ... failed` entry, removed, and a new view announced | same | Closed socket or expired lease is removed and a new view announced |
 | Use | Keep property availability caches consistent across replicas | same | same |
 
 The demos kill `replica-3` (Python, Node) or close the WebSocket replica (Cloudflare). The next multicast reports `failed: ["replica-3"]` and the membership view shrinks.

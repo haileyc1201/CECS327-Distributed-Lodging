@@ -43,7 +43,7 @@ class FramedServer:
 
     def serve_forever(self) -> None:
         self.logger.info(f"listening on {self.host}:{self.port}")
-        self._sock.settimeout(0.5)
+        self._sock.settimeout(0.1)
         while not self._stop.is_set():
             try:
                 conn, addr = self._sock.accept()
@@ -65,3 +65,5 @@ class FramedServer:
             self._sock.close()
         except OSError:
             pass
+        if self._thread and self._thread is not threading.current_thread():
+            self._thread.join(timeout=2)

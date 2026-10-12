@@ -70,7 +70,7 @@ class Cluster(unittest.TestCase):
     def tearDownClass(cls):
         for s in cls.subs:
             s.close()
-        for n in [cls.prop, cls.broker, cls.coord, cls.res, *cls.replicas]:
+        for n in [cls.res, *cls.replicas, cls.coord, cls.broker, cls.prop]:
             n.stop()
 
 
@@ -118,6 +118,9 @@ class TC4_GroupMembership(unittest.TestCase):
     def test_join_view_multicast_and_failure(self):
         coord = GroupCoordinator(port=0).start()
         members = [GroupMember(f"m{i}", "g", "127.0.0.1", coord.port).start() for i in range(3)]
+        # always shut down and join every node (and the coordinator's view threads)
+        for node in [*members, coord][::-1]:
+            self.addCleanup(node.stop)
         for m in members:
             m.join()
         self.assertEqual(coordinator_request("t", "127.0.0.1", coord.port, "group.members", {"group": "g"})["members"],
@@ -132,13 +135,12 @@ class TC4_GroupMembership(unittest.TestCase):
         self.assertEqual(coord.members("g"), ["m0", "m1"])
         members[0].leave()
         self.assertEqual(coord.members("g"), ["m1"])
-        for m in members + [coord]:
-            m.stop()
 
 
 class TC5_Pubsub_Topics(unittest.TestCase):
     def test_only_matching_topic(self):
         b = Broker(port=0).start()
+        self.addCleanup(b.stop)
         a = Subscriber("a", "127.0.0.1", b.port, ["t1"]).start()
         z = Subscriber("z", "127.0.0.1", b.port, ["t2"]).start()
         p = Publisher("p", "127.0.0.1", b.port)
@@ -147,7 +149,6 @@ class TC5_Pubsub_Topics(unittest.TestCase):
         self.assertEqual(z.received, [])
         for x in (a, z, p):
             x.close()
-        b.stop()
 
 
 class TC6_Logging(unittest.TestCase):

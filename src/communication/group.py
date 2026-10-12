@@ -19,13 +19,14 @@ detection) and every membership change is announced to the group as a
 from __future__ import annotations
 
 import itertools
+import socket
 import threading
 from typing import Callable
 
 from .codec import make_envelope
 from .msglog import MessageLogger
 from .server import FramedServer
-from .transport import connect, recv_message, send_message
+from .transport import ConnectionClosed, connect, recv_message, send_message
 
 
 class GroupCoordinator(FramedServer):
@@ -35,6 +36,7 @@ class GroupCoordinator(FramedServer):
         self._lock = threading.Lock()
         self._seq = itertools.count(1)
         self._view = itertools.count(1)
+        self._workers: list[threading.Thread] = []
 
     def members(self, group: str) -> list[str]:
         with self._lock:
@@ -47,7 +49,10 @@ class GroupCoordinator(FramedServer):
                 send_message(s, envelope, self.logger, peer)
                 ack, _ = recv_message(s, self.logger, peer)
             return ack.get("type") == "group.ack"
-        except OSError:
+        except (ConnectionClosed, socket.timeout, OSError, ValueError) as exc:
+            # an unreachable / closed member is a normal group event, not a crash
+            self.logger.info(f"delivery of {envelope['type']} to {member} at {peer} failed: "
+                             f"{type(exc).__name__}: {exc}", member=member, failure=type(exc).__name__)
             return False
 
     def _fanout(self, group: str, msg_type: str, payload: dict) -> tuple[list[str], list[str]]:
@@ -99,8 +104,15 @@ class GroupCoordinator(FramedServer):
         send_message(conn, make_envelope(reply_type, self.name, reply_body, receiver=message["sender"],
                                          correlation_id=message["id"]), self.logger, peer, fmt)
         if kind in ("group.join", "group.leave"):
-            threading.Thread(target=self._announce_view, args=(group,), daemon=True).start()
+            t = threading.Thread(target=self._announce_view, args=(group,), daemon=True)
+            self._workers = [w for w in self._workers if w.is_alive()] + [t]
+            t.start()
         return True
+
+    def stop(self) -> None:
+        super().stop()
+        for t in list(self._workers):  # let pending view announcements finish
+            t.join(timeout=5)
 
 
 def coordinator_request(sender: str, host: str, port: int, msg_type: str, payload: dict) -> dict:
