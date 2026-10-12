@@ -1,262 +1,59 @@
-# CECS 327 Distributed Lodging
+# CECS 327 Distributed Lodging, Milestone 2: Communication
 
-Milestone 1 project for CECS 327, Section 02 at California State University, Long Beach.
+CECS 327, Section 02, California State University, Long Beach.
 
 **Team:** Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter, and Anthony Torres
 
-**Milestone 1 due:** September 24, 2026
+A distributed lodging reservation system similar to Airbnb. This branch (`tom-react-frontend`) is the **live web version**: Node.js HTTP microservices with a React UI locally, and a Cloudflare Worker + D1 + Durable Object when hosted. The Python socket simulation of the same protocol is on [`main`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/main).
 
-## Live demo
+## What Milestone 2 Delivers
 
-Try the hosted Milestone 1 UI (Cloudflare Worker + D1):
-
-| | |
-|---|---|
-| **Primary** | [https://lodging.pitchblack.icu](https://lodging.pitchblack.icu) |
-| Apex | [https://pitchblack.icu](https://pitchblack.icu) |
-| WWW | [https://www.pitchblack.icu](https://www.pitchblack.icu) |
-| Workers.dev | [https://cecs327-lodging.tommalter5.workers.dev](https://cecs327-lodging.tommalter5.workers.dev) |
-
-[![Distributed Lodging demo preview](screenshots/demo-preview.png)](https://lodging.pitchblack.icu)
-
-*Click the preview to open the live site. Features: search, property cards, book/cancel, hard reset (double confirm), colorized service logs, and a live React state panel.*
-
-## Project
-
-We are building a distributed lodging reservation system similar to Airbnb. Guests will be able to search properties and make reservations, while hosts will be able to create listings and manage availability.
-
-For Milestone 1, we have three backend **Node.js HTTP** microservices plus an Express gateway and React UI (local demo), and a **Cloudflare Worker + D1** host for the same API contract:
-
-- Property Service (HTTP `:5001` locally; D1 module on Cloudflare)
-- Reservation Service (HTTP `:5002` locally; Worker module on Cloudflare)
-- Payment Service (HTTP `:5003` locally; mock module on Cloudflare)
-- HTTP Gateway (Express `:8000` locally; Hono Worker `cecs327-lodging` on Cloudflare)
-- React frontend (Vite `:5173` locally; Workers Assets when hosted)
-
-```text
-React UI (:5173)
-  -> Gateway Express (:8000)
-       -> Property Service (:5001)
-       -> Reservation Service (:5002)
-            -> Property Service (HTTP)
-            -> Payment Service (:5003)
-            -> data/reservations.csv + data/properties.csv
-```
-
-> **Note:** The original Python TCP services are archived under `archive/python-tcp/`.
-> Node.js HTTP is the current stack.
-
-User Service and Review Service are planned for later milestones.
-
-## Ports
-
-| Component            | Port |
-|----------------------|------|
-| Property Service     | 5001 |
-| Reservation Service  | 5002 |
-| Payment Service      | 5003 |
-| HTTP Gateway         | 8000 |
-| React (Vite)         | 5173 |
-| Comm Hub (RPC, pub-sub, group) | 5010 |
-| Subscribers (notification / analytics / audit) | 5101-5103 |
-| Group members (replica-1..3) | 5201-5203 |
-
-## Repository Structure
-
-```text
-.
-├── docs/
-├── frontend/                 # React + Vite UI
-├── services/                 # Local Node HTTP microservices
-│   ├── shared/
-│   ├── property-service/
-│   ├── reservation-service/
-│   ├── payment-service/
-│   └── gateway/
-├── cloudflare/               # Hosted Worker (Hono) + D1 + Assets
-│   ├── src/
-│   │   ├── index.ts          # /api/* gateway routes
-│   │   └── services/         # property / payment / reservation modules
-│   ├── wrangler.toml
-│   └── schema.sql
-├── archive/python-tcp/       # Legacy Python TCP + Flask (not primary)
-├── data/
-│   ├── properties.csv
-│   └── reservations.csv
-├── logs/
-├── screenshots/
-├── package.json
-├── start-lodging.sh
-└── README.md
-```
-
-## Prerequisites
-
-- Node.js 18+ and npm (local services and tests)
-- Node.js 22+ for the Cloudflare Worker (`wrangler dev` / `wrangler deploy`) and the hosted test script
-- Optional: a Cloudflare account and `CLOUDFLARE_API_TOKEN` to deploy
-
-One-time setup from the repo root:
-
-```bash
-npm install
-cd frontend && npm install && cd ..
-```
-
-Or: `npm run install:all`
-
-## How to Run (Milestone 1 Demo)
-
-### Option A — one command (recommended)
-
-```bash
-npm start
-```
-
-Starts Property, Payment, Reservation, Gateway, and the Vite frontend together
-(via `concurrently`). Open **http://127.0.0.1:5173**
-
-### Option B — shell helper
-
-```bash
-./start-lodging.sh
-```
-
-### Option C — separate terminals
-
-```bash
-# Terminal 1–4 (or one terminal with npm run services)
-npm run property      # :5001
-npm run payment       # :5003
-npm run reservation   # :5002
-npm run gateway       # :8000
-
-# Terminal 5
-cd frontend && npm run dev
-```
-
-Backend-only: `npm run services`
-
-## Demo Steps (for video)
-
-1. Start services + frontend (`npm start` or Option B/C above).
-2. In the browser, confirm ~12 property **cards** load (city, beds, price, available badge). Search/filter works client-side.
-3. Enter a guest name, click a card, then **Book** (e.g. property 101).
-4. Confirm the result shows `accepted`, a reservation id, and payment `approved`.
-5. Refresh — that property should now be unavailable. Cancel from **Your reservations** to refund and unlock.
-6. **Hard reset** (header button, **two confirms**) restores seed CSV data for another run. Or: `curl -X POST http://127.0.0.1:8000/api/reset`
-7. Optional curl checks:
-
-```bash
-curl http://127.0.0.1:8000/api/health
-curl http://127.0.0.1:8000/api/properties
-curl -X POST http://127.0.0.1:8000/api/reservations \
-  -H 'Content-Type: application/json' \
-  -d '{"property_id": 101, "guest_name": "Tom"}'
-curl -X POST http://127.0.0.1:8000/api/reservations/cancel \
-  -H 'Content-Type: application/json' \
-  -d '{"reservation_id": "res-XXXXXXXX"}'
-curl -X POST http://127.0.0.1:8000/api/reset
-```
-
-Data files are CSV (`data/properties.csv`, `data/reservations.csv`), not JSON.
-
-## GitHub Pages (static UI demo)
-
-Teammates can try the React UI without a backend. Pages serves **demo/mock mode** (in-browser store seeded with the same ~12 listings). Banner shows when mock is active. For a **full live API** (D1-backed), use the Cloudflare Workers deploy above.
-
-- Workflow: `.github/workflows/pages.yml` builds `frontend/` with `base: /CECS327-Distributed-Lodging/` (default production base) and deploys on push to `main` or `tom-react-frontend`.
-- Cloudflare builds use `VITE_DEPLOY_TARGET=cloudflare` so `base` is `/`.
-- Enable **Settings → Pages → Source: GitHub Actions** on the team repo.
-- Expected Pages URL: https://haileyc1201.github.io/CECS327-Distributed-Lodging/
-- Local Node stack: Property, Payment, Reservation, and Gateway still work via `npm start`.
-
-
-## Cloudflare Workers deploy (hosted full API)
-
-The `cloudflare/` Worker named **`cecs327-lodging`** serves the React build from Workers Assets and implements the same `/api/*` contract as the Express gateway. Properties and reservations are stored in D1 database `cecs327-lodging` (id `0349fd11-02aa-4509-bcc5-ec72f06bb7a1`).
-
-Architecture (still “distributed” in code — separate modules):
-
-```text
-Browser (same origin)
-  -> Worker Hono gateway (/api/* + static assets)
-       -> propertyService  (D1)
-       -> reservationService
-            -> propertyService
-            -> paymentService (mock approve/refund)
-```
-
-### Build frontend for Workers (root base + empty API URL)
-
-```bash
-# Same-origin API: leave VITE_API_URL unset
-cd frontend
-VITE_DEPLOY_TARGET=cloudflare npm install
-VITE_DEPLOY_TARGET=cloudflare npm run build   # writes frontend/dist with base /
-cd ../cloudflare
-npm install
-```
-
-Or from repo root: `npm run cf:build` (after `npm run cf:install`).
-
-### Deploy with Wrangler
-
-Requires **Node.js 22+** (Wrangler 4) and `CLOUDFLARE_API_TOKEN` (or `npx wrangler login`):
-
-```bash
-cd cloudflare
-npx wrangler deploy
-```
-
-Root shortcut (build + deploy): `npm run cf:deploy`
-
-After deploy, open the Worker URL (e.g. `https://cecs327-lodging.<account>.workers.dev`). The UI probes `GET /api/health` on the same origin and **disables** browser mock mode when health returns `{ status: "ok" }`.
-
-### Hard reset on hosted demo
-
-Use the UI **Hard reset** button (two confirms) or:
-
-```bash
-curl -X POST https://cecs327-lodging.<account>.workers.dev/api/reset
-```
-
-Restores seed availability (properties **102, 107, 112** unavailable; others available) and deletes all reservations.
-
-### Local Workers preview
-
-```bash
-npm run cf:dev
-# or: cd cloudflare && npx wrangler dev
-```
-
-See `cloudflare/README.md` for module details and `schema.sql`.
-
-## Communication Milestone (RPC, pub-sub, group communication, logging)
-
-The full report is in [`docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf`](docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf) ([markdown](docs/communication-milestone/CECS327_Communication_Milestone_Report.md)). Real run logs are in [`docs/logs/`](docs/logs). The Python-socket version of the same protocol lives on `main`.
-
-| Requirement | Local Node stack | Cloudflare Worker |
+| Requirement | Local Node stack | Cloudflare Worker (hosted) |
 |---|---|---|
-| Marshalling (JSON + typed XML), before/after logged | `services/shared/messaging.js` | `cloudflare/src/comm/marshal.ts` |
-| RPC (JSON-RPC 2.0 over HTTP) | `POST :8000/api/rpc` → Comm Hub `/rpc` | `POST /api/rpc` |
-| Request-reply | `availability.check`, `property.get`, `reservation.book` | same |
-| Publish-subscribe, multiple subscribers | `booking.created` → 3 subscriber processes | `CommHub` Durable Object → 3 built-in + any WebSocket subscribers (`/api/comm/ws?role=subscriber`) |
-| Group communication + membership | group `property-replicas`, 3 replica processes, join/leave/view/failure detection | DO coordinator. Mailbox members (`/api/group/*`) and WebSocket members (`/api/comm/ws?role=member`) |
-| ISO-8601 logging of every send/receive | `logs/messages.jsonl`, `GET /api/comm/logs` | D1 table `message_log`, `GET /api/comm/logs` |
+| Marshalling / unmarshalling | Envelope ↔ JSON or typed XML (`Content-Type` selects the format); before/after logged. `services/shared/messaging.js` | Same format. `cloudflare/src/comm/marshal.ts` |
+| RPC | JSON-RPC 2.0 over HTTP: `POST :8000/api/rpc` → Comm Hub `/rpc`. `services/comm-hub/server.js` | `POST /api/rpc`. `cloudflare/src/comm/routes.ts` |
+| Request-reply | `availability.check`, `property.get`, `reservation.book` (Reservation → Property → Payment) | Same methods against D1 |
+| Publish-subscribe (multiple subscribers) | `booking.created` → 3 subscriber processes (`services/comm-hub/node.js`) | `CommHub` Durable Object → 3 built-in subscribers + WebSocket subscribers (`/api/comm/ws?role=subscriber`). `cloudflare/src/comm/hub.ts` |
+| Group communication (membership) | Group `property-replicas`, 3 replica processes: join/leave/view, numbered multicast with acks, failure detection | DO coordinator: mailbox members (`/api/group/*` + heartbeat lease) and WebSocket members (`/api/comm/ws?role=member`) |
+| Timestamped logging | Every SEND/RECV in `logs/messages.jsonl`; `GET /api/comm/logs` | D1 table `message_log`; `GET /api/comm/logs?limit=&node=`. `cloudflare/src/comm/msglog.ts` |
+| Demo + tests | `scripts/comm-demo.js`, `tests/comm.test.js` | `cloudflare/scripts/comm-demo.mjs` (21 checks) |
 
-### Install dependencies
+Booking flow: client → Reservation → Property (`availability.check`) → Payment → save → publish `booking.created` → multicast `availability_update` to `property-replicas` → reply listing `notified_subscribers` and `replicas_updated`.
+
+### Ports (local)
+
+| Component | Port |
+|---|---|
+| Property / Reservation / Payment | 5001 / 5002 / 5003 |
+| Comm Hub (RPC, pub-sub, group) | 5010 |
+| Subscribers: notification / analytics / audit | 5101 / 5102 / 5103 |
+| Group members: replica-1 / -2 / -3 | 5201 / 5202 / 5203 |
+| HTTP Gateway | 8000 |
+| React (Vite) | 5173 |
+| Worker (`wrangler dev`) | 8787 |
+
+## Required Software
+
+- Node.js 18+ and npm (local services and tests; tested on Node 20 and 22)
+- Node.js 22+ for the Cloudflare Worker (Wrangler 4) and the hosted test script (it uses the global `WebSocket`)
+- Optional: a Cloudflare account with `CLOUDFLARE_API_TOKEN` (or `npx wrangler login`) to deploy
+- Git
+
+## Install Dependencies
 
 ```bash
-npm run install:all                 # root + frontend
-npm install --prefix cloudflare     # Worker (Node 22+)
+git clone https://github.com/haileyc1201/CECS327-Distributed-Lodging.git
+cd CECS327-Distributed-Lodging
+git checkout tom-react-frontend
+npm run install:all              # root + frontend
+npm install --prefix cloudflare  # Worker (Node 22+)
 ```
 
-### Start each service
+## Start Each Service
+
+All at once: `./start-lodging.sh`. It starts the services, the hub, 3 subscribers, 3 replicas and the UI. To start them separately, use one terminal each:
 
 ```bash
-./start-lodging.sh                  # everything, incl. hub, 3 subscribers, 3 replicas
-# or separately:
 npm run property      # :5001
 npm run payment       # :5003
 npm run hub           # :5010
@@ -271,46 +68,77 @@ node services/comm-hub/node.js member replica-3 5203 property-replicas
 npm run frontend      # :5173
 ```
 
+Worker locally:
+
+```bash
+npm run cf:build
+cd cloudflare
+npx wrangler d1 execute cecs327-lodging --local --file=schema.sql   # first time only
+npx wrangler dev                                                    # http://127.0.0.1:8787
+```
+
 Example RPC call:
 
 ```bash
 curl -s localhost:8000/api/rpc -H 'content-type: application/json' -d '{"id":"x1","type":"rpc.request","sender":"curl","receiver":null,"timestamp":"2026-10-12T00:00:00.000Z","correlation_id":null,"payload":{"jsonrpc":"2.0","method":"availability.check","params":{"property_id":101},"id":1}}'
 ```
 
-### Run the demo
+## Run the Demo
 
 ```bash
-npm run comm:demo        # starts all 11 processes, runs RPC (JSON + XML), booking, pub-sub, multicast, kills a replica, prints logs
+npm run comm:demo
 ```
 
-Hosted / Worker demo:
+The local demo:
+
+1. Starts all 11 processes.
+2. Runs the JSON and XML marshalling round-trip.
+3. Runs RPC request-reply, including an error case.
+4. Books a property, which triggers pub-sub to 3 subscribers and a multicast to 3 replicas.
+5. Shows a double booking being rejected.
+6. Kills replica-3 to show failure detection.
+7. Prints subscriber and replica state and `/api/comm/logs`.
+
+Hosted/Worker demo:
 
 ```bash
-npm run cf:build && cd cloudflare && npx wrangler dev           # http://127.0.0.1:8787
-BASE_URL=http://127.0.0.1:8787 npm test                          # in cloudflare/
-npm run cf:deploy                                                # deploy (needs Cloudflare credentials)
-BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare
+BASE_URL=http://127.0.0.1:8787 npm run cf:test           # against wrangler dev
+BASE_URL=https://lodging.pitchblack.icu npm run cf:test  # against the deployed Worker
 ```
 
-### Reproduce the test cases
+> **Deploy status (2026-10-12):** the Milestone 2 Worker passes all 21 checks locally under `wrangler dev`, but it is **not deployed yet**. `wrangler deploy` failed 6+ times (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls such as `wrangler deployments list` work with the same token. The live site still serves the Milestone 1 build (last deployed 2026-09-20), without the Milestone 2 endpoints. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare`.
+
+## Test Cases
 
 ```bash
-npm test                                   # Node: TC1-TC6 (node:test), 7 tests
-BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks (needs wrangler dev or a deployed URL)
+npm test                                         # Node: node:test, 7 tests
+BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks
 ```
 
-| # | Test case |
-|---|---|
-| TC1 | JSON and XML marshal/unmarshal round-trip keeps types; ISO-8601 envelope timestamp |
-| TC2 | Request-reply `availability.check` / `property.get` in JSON and XML; 404 and -32601 errors |
-| TC3 | Booking notifies all subscribers and multicasts to all replicas; double booking rejected |
-| TC4 | Group failure detection (killed replica removed), graceful leave, view update |
-| TC5 | Pub-sub topic filtering |
-| TC6 | Every log entry ISO-8601; SEND entries carry before/after marshalling; `/api/comm/logs` serves them |
+| # | Test case | Node | Worker |
+|---|---|---|---|
+| TC1 | JSON and XML marshal/unmarshal round-trip keeps types; ISO-8601 timestamp | ✓ | XML reply checked |
+| TC2 | Request-reply `availability.check` / `property.get` in JSON and XML; 404 and -32601 errors | ✓ | ✓ |
+| TC3 | Booking notifies all subscribers and multicasts to all replicas; double booking rejected | ✓ (3 + 3) | ✓ (3 built-in + 2 WS subscribers; 2 mailbox + 1 WS replica) |
+| TC4 | Group failure detection, graceful leave, view update | ✓ | ✓ (closed WebSocket member removed) |
+| TC5 | Pub-sub topic filtering | ✓ | n/a |
+| TC6 | Every log entry ISO-8601; before/after marshalling; `/api/comm/logs` | ✓ | ✓ |
 
-### Contribution table
+Latest results: Node 7/7 pass; Worker all 21 checks pass under `wrangler dev`.
 
-| Member | Contribution |
+## Report and Logs
+
+- **Report (PDF):** [`docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf`](docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf) ([markdown source](docs/milestone-2/CECS327_Milestone2_Communication_Report.md)). It covers the communication model, message formats, marshalling, why sockets/RPC, the pub-sub and group designs, a side-by-side comparison of the Python and web/Cloudflare paths, and real log excerpts.
+- **Logs from real runs:** [`docs/logs/`](docs/logs)
+  - `python-messages.jsonl`, `python-demo-output.txt`, `python-test-results.txt`: Python simulation (`main`)
+  - `node-messages.jsonl`, `node-demo-output.txt`, `node-test-results.txt`: Node stack (`tom-react-frontend`)
+  - `worker-local-messages.jsonl`, `worker-local-demo-output.txt`: Cloudflare Worker under `wrangler dev`
+- Runtime logs are written to `logs/messages.jsonl` (git-ignored).
+- No video for this milestone.
+
+## Contribution Table
+
+| Member | Milestone 2 contribution |
 |---|---|
 | _Member 1_ | _TBD_ |
 | _Member 2_ | _TBD_ |
@@ -320,32 +148,54 @@ BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks (needs wran
 | _Member 6_ | _TBD_ |
 | _Member 7_ | _TBD_ |
 
-## Milestone 1 Goal
+_Fill in names and contributions before submitting._
 
-The Milestone 1 prototype needs at least three communicating processes or services, a simple client request, a server response, and logs showing the messages exchanged.
+## Milestone 1 (previous)
 
-## Clone the Repository
+Milestone 1 built Property, Reservation and Payment as Node HTTP services behind an Express gateway, with a React UI. Data is in `data/*.csv`. The original Python TCP services are archived in `archive/python-tcp/`. Milestone 1 also added a Cloudflare Worker + D1 host with the same `/api/*` contract.
 
-```bash
-git clone https://github.com/haileyc1201/CECS327-Distributed-Lodging.git
-cd CECS327-Distributed-Lodging
+The Milestone 1 build is live at:
+
+- https://lodging.pitchblack.icu (also https://pitchblack.icu, https://www.pitchblack.icu)
+- https://cecs327-lodging.tommalter5.workers.dev
+
+Features: search, book/cancel with mock payment and refund, hard reset (`POST /api/reset`), colorized service logs, and a React state panel. The design docs are in `docs/milestone-1/`.
+
+[![Distributed Lodging demo preview](screenshots/demo-preview.png)](https://lodging.pitchblack.icu)
+
+Cloudflare notes:
+
+- The Worker is `cecs327-lodging` and uses the D1 database `cecs327-lodging`. Its config is in `cloudflare/wrangler.toml`, including the `COMM_HUB` Durable Object.
+- Build and deploy with `npm run cf:deploy` (Node 22+).
+- Preview locally with `npm run cf:dev`.
+
+## Repository Structure
+
+```text
+.
+├── services/
+│   ├── shared/messaging.js   # M2 envelope, marshalling, logging
+│   ├── comm-hub/             # M2 RPC + pub-sub + group hub, subscriber/member nodes
+│   ├── property-service/  reservation-service/  payment-service/  gateway/
+├── cloudflare/
+│   ├── src/comm/             # M2 marshal, msglog (D1), CommHub DO, routes
+│   ├── src/services/         # property / payment / reservation modules
+│   ├── scripts/comm-demo.mjs
+│   ├── wrangler.toml  schema.sql
+├── frontend/                 # React + Vite UI
+├── scripts/                  # comm-demo.js, comm-cluster.js
+├── tests/comm.test.js
+├── docs/milestone-1/  docs/milestone-2/  docs/logs/
+├── archive/python-tcp/
+├── data/  logs/  screenshots/
+├── package.json  start-lodging.sh
 ```
 
 ## Working on the Project
 
-Before starting work:
-
 ```bash
 git pull
 git checkout -b yourname-task
+git add . && git commit -m "Describe what you changed"
+git push -u origin yourname-task   # then open a pull request
 ```
-
-After making changes:
-
-```bash
-git add .
-git commit -m "Describe what you changed"
-git push -u origin yourname-task
-```
-
-Then open a pull request on GitHub so the change can be merged into `main`.
