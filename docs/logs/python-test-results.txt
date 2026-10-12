@@ -10,6 +10,6 @@ test_only_matching_topic (tests.test_communication.TC5_Pubsub_Topics.test_only_m
 test_every_entry_is_timestamped (tests.test_communication.TC6_Logging.test_every_entry_is_timestamped) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.711s
+Ran 10 tests in 1.781s
 
 OK
