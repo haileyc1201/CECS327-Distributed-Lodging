@@ -72,7 +72,9 @@ console.log('  booking.created subscribers:', subs.subscribers)
 check('>= 5 subscribers (3 built-in + 2 websocket)', subs.subscribers.length >= 5)
 
 banner('3. booking -> pub-sub + multicast')
-const book = (await rpc('reservation.book', { property_id: 101, guest_name: `Demo ${RUN}` })).result
+const bookR = await rpc('reservation.book', { property_id: 101, guest_name: `Demo ${RUN}` })
+if (bookR.error) console.log('  error', JSON.stringify(bookR.error))
+const book = bookR.result || {}
 console.log('  status', book.status, book.reservation?.reservation_id)
 console.log('  notified_subscribers', book.notified_subscribers)
 console.log('  replicas_updated', book.replicas_updated)

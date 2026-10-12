@@ -16,7 +16,7 @@ A distributed lodging reservation system similar to Airbnb. This branch (`tom-re
 | Publish-subscribe (multiple subscribers) | `booking.created` → 3 subscriber processes (`services/comm-hub/node.js`) | `CommHub` Durable Object → 3 built-in subscribers + WebSocket subscribers (`/api/comm/ws?role=subscriber`). `cloudflare/src/comm/hub.ts` |
 | Group communication (membership) | Group `property-replicas`, 3 replica processes: join/leave/view, numbered multicast with acks, failure detection | DO coordinator: mailbox members (`/api/group/*` + heartbeat lease) and WebSocket members (`/api/comm/ws?role=member`) |
 | Timestamped logging | Every SEND/RECV in `logs/messages.jsonl`; `GET /api/comm/logs` | D1 table `message_log`; `GET /api/comm/logs?limit=&node=`. `cloudflare/src/comm/msglog.ts` |
-| Demo + tests | `scripts/comm-demo.js`, `tests/comm.test.js` | `cloudflare/scripts/comm-demo.mjs` (21 checks) |
+| Demo + tests | `scripts/comm-demo.js`, `tests/comm.test.js` | `cloudflare/scripts/comm-demo.mjs` (20 checks) |
 
 Booking flow: client → Reservation → Property (`availability.check`) → Payment → save → publish `booking.created` → multicast `availability_update` to `property-replicas` → reply listing `notified_subscribers` and `replicas_updated`.
 
@@ -106,13 +106,13 @@ BASE_URL=http://127.0.0.1:8787 npm run cf:test           # against wrangler dev
 BASE_URL=https://lodging.pitchblack.icu npm run cf:test  # against the deployed Worker
 ```
 
-> **Deploy status (2026-10-12):** the Milestone 2 Worker passes all 21 checks locally under `wrangler dev`, but it is **not deployed yet**. `wrangler deploy` failed 6+ times (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls such as `wrangler deployments list` work with the same token. The live site still serves the Milestone 1 build (last deployed 2026-09-20), without the Milestone 2 endpoints. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare`.
+> **Deploy status (2026-10-12):** the Milestone 2 Worker passes all 20 checks locally under `wrangler dev`, but it is **not deployed yet**. `wrangler deploy` failed 9 times (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls such as `wrangler deployments list` work with the same token. The live site still serves the Milestone 1 build (last deployed 2026-09-20), without the Milestone 2 endpoints. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare`.
 
 ## Test Cases
 
 ```bash
 npm test                                         # Node: node:test, 7 tests
-BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks
+BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 20 checks
 ```
 
 | # | Test case | Node | Worker |
@@ -124,7 +124,7 @@ BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 21 checks
 | TC5 | Pub-sub topic filtering | ✓ | n/a |
 | TC6 | Every log entry ISO-8601; before/after marshalling; `/api/comm/logs` | ✓ | ✓ |
 
-Latest results: Node 7/7 pass; Worker all 21 checks pass under `wrangler dev`.
+Latest results: Node 7/7 pass; Worker all 20 checks pass under `wrangler dev`.
 
 ## Report and Logs
 
@@ -135,6 +135,25 @@ Latest results: Node 7/7 pass; Worker all 21 checks pass under `wrangler dev`.
   - `worker-local-messages.jsonl`, `worker-local-demo-output.txt`: Cloudflare Worker under `wrangler dev`
 - Runtime logs are written to `logs/messages.jsonl` (git-ignored).
 - No video for this milestone.
+
+## Screenshots
+
+These are from real runs; all files are in [`docs/milestone-2/screenshots/`](docs/milestone-2/screenshots).
+
+| # | Screenshot |
+|---|---|
+| 01 | [Python demo, full run (10 processes)](docs/milestone-2/screenshots/01_python_demo_full_run.png) |
+| 02 | [Request-reply: JSON-RPC over TCP](docs/milestone-2/screenshots/02_request_reply_jsonrpc_tcp.png) |
+| 03 | [Marshalling before/after (JSON + XML)](docs/milestone-2/screenshots/03_marshalling_before_after.png) |
+| 04 | [Pub-sub: booking.created to 3 subscribers](docs/milestone-2/screenshots/04_pubsub_three_subscribers.png) |
+| 05 | [Group communication: multicast, acks, membership, failure](docs/milestone-2/screenshots/05_group_multicast_membership.png) |
+| 06 | [ISO-8601 timestamped messages.jsonl](docs/milestone-2/screenshots/06_timestamped_message_log.png) |
+| 07 | [Python tests (10/10)](docs/milestone-2/screenshots/07_python_tests_passing.png) |
+| 08 | [Node comm demo](docs/milestone-2/screenshots/08_node_comm_demo.png) |
+| 09 | [Node tests (7/7)](docs/milestone-2/screenshots/09_node_tests_passing.png) |
+| 10a | [Worker under wrangler dev: 20/20 checks](docs/milestone-2/screenshots/10a_worker_local_tests.png) |
+| 10b | [Worker GET /api/comm/logs JSON](docs/milestone-2/screenshots/10b_worker_comm_logs_json.png) |
+| 11 | [React UI (local stack) after a booking made through /api/rpc](docs/milestone-2/screenshots/11_react_ui.png) |
 
 ## Contribution Table
 

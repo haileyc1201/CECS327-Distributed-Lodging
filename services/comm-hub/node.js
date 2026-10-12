@@ -13,7 +13,7 @@ const [role, name, portArg, target] = process.argv.slice(2);
 const PORT = Number(portArg);
 const HUB = process.env.HUB_URL || 'http://127.0.0.1:5010';
 const logger = makeLogger(name);
-const state = { received: [], view: [], cache: {} };
+const state = { received: [], view: [], viewId: 0, cache: {} };
 
 const ACTIONS = {
   'notification-service': (e) => `send confirmation email to ${e.guest_name} for ${e.property_name}`,
@@ -37,7 +37,8 @@ app.post('/deliver', envelopeBody(logger), (req, res) => {
     logger.info(`replica state now ${JSON.stringify(state.cache)}`);
   } else if (env.type === 'group.view') {
     ackType = 'group.ack';
-    state.view = p.members;
+    // views can arrive out of order; only install a newer one
+    if (p.view_id > state.viewId) { state.viewId = p.view_id; state.view = p.members; }
   }
   replyEnvelope(logger, req, res, makeEnvelope(ackType, name, { seq: p.seq ?? p.view_id, member: name },
     { receiver: env.sender, correlationId: env.id }));
