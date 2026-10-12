@@ -1,0 +1,19 @@
+{
+  "id": "a13de2f6078d",
+  "type": "rpc.reply",
+  "sender": "reservation-rpc",
+  "receiver": "client",
+  "timestamp": "2026-10-12T23:16:20.195Z",
+  "correlation_id": "fc94cb9cacac",
+  "payload": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "result": {
+      "status": "accepted",
+      "reservation": {"reservation_id": "R-27d48c43", "property_id": 101,
+                      "amount": 300, "status": "confirmed"},
+      "notified_subscribers": ["notification-service", "analytics-service", "audit-service"],
+      "replicas_updated": ["replica-1", "replica-2", "replica-3"]
+    }
+  }
+}

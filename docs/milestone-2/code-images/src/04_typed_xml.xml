@@ -1,0 +1,16 @@
+<message>
+  <envelope t="dict">
+    <entry key="id"><value t="str">9aee0f075a81</value></entry>
+    <entry key="type"><value t="str">rpc.request</value></entry>
+    ...
+    <entry key="payload">
+      <value t="dict">
+        <entry key="params">
+          <value t="dict">
+            <entry key="property_id"><value t="int">103</value></entry>
+          </value>
+        </entry>
+      </value>
+    </entry>
+  </envelope>
+</message>

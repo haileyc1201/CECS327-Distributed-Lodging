@@ -1,0 +1,14 @@
+{
+  "id": "fc94cb9cacac",
+  "type": "rpc.request",
+  "sender": "client",
+  "receiver": null,
+  "timestamp": "2026-10-12T23:16:20.185Z",
+  "correlation_id": null,
+  "payload": {
+    "jsonrpc": "2.0",
+    "method": "reservation.book",
+    "params": {"property_id": 101, "guest_name": "Demo Guest", "nights": 2},
+    "id": 3
+  }
+}

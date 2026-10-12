@@ -1,0 +1,9 @@
+// pub-sub event: broker -> each subscriber
+{"type": "event", "sender": "broker",
+ "payload": {"topic": "booking.created", "seq": 1, "publisher": "reservation-rpc",
+             "event": {"reservation_id": "R-27d48c43", "property_id": 101, "amount": 300}}}
+
+// group multicast: coordinator -> each member of property-replicas
+{"type": "group.deliver", "sender": "group-coordinator", "receiver": "replica-2",
+ "payload": {"group": "property-replicas", "seq": 1, "origin": "reservation-rpc",
+             "message": {"op": "availability_update", "property_id": 101, "available": false}}}
