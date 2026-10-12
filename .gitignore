@@ -22,3 +22,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+# Communication milestone runtime logs (copies kept in docs/logs)
+logs/*.jsonl
+logs/*.out

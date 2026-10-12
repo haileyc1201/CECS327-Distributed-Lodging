@@ -1,0 +1,57 @@
+
+> cecs327-distributed-lodging@1.0.0 test
+> node --test tests/comm.test.js
+
+TAP version 13
+# Subtest: TC1 marshalling: JSON and XML round-trip keep types
+ok 1 - TC1 marshalling: JSON and XML round-trip keep types
+  ---
+  duration_ms: 2.416549
+  type: 'test'
+  ...
+# Subtest: cluster
+    # Subtest: TC2 request-reply: availability.check over JSON-RPC (JSON + XML)
+    ok 1 - TC2 request-reply: availability.check over JSON-RPC (JSON + XML)
+      ---
+      duration_ms: 61.081687
+      type: 'test'
+      ...
+    # Subtest: TC3 booking publishes to 3 subscribers and multicasts to 3 replicas
+    ok 2 - TC3 booking publishes to 3 subscribers and multicasts to 3 replicas
+      ---
+      duration_ms: 83.402653
+      type: 'test'
+      ...
+    # Subtest: TC4 group membership: failure removes member, leave updates view
+    ok 3 - TC4 group membership: failure removes member, leave updates view
+      ---
+      duration_ms: 27.277482
+      type: 'test'
+      ...
+    # Subtest: TC5 pub-sub only delivers to matching topic
+    ok 4 - TC5 pub-sub only delivers to matching topic
+      ---
+      duration_ms: 2.839086
+      type: 'test'
+      ...
+    # Subtest: TC6 every message logged with ISO-8601 timestamp; /api/comm/logs serves them
+    ok 5 - TC6 every message logged with ISO-8601 timestamp; /api/comm/logs serves them
+      ---
+      duration_ms: 6.953321
+      type: 'test'
+      ...
+    1..5
+ok 2 - cluster
+  ---
+  duration_ms: 563.273136
+  type: 'test'
+  ...
+1..2
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 610.945605

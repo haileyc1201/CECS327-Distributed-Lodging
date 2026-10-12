@@ -1,0 +1,119 @@
+
+=== processes ===================================================
+  property               pid=3731640
+  payment                pid=3731641
+  hub                    pid=3731642
+  reservation            pid=3731661
+  gateway                pid=3731662
+  notification-service   pid=3731675
+  analytics-service      pid=3731676
+  audit-service          pid=3731677
+  replica-1              pid=3731679
+  replica-2              pid=3731684
+  replica-3              pid=3731692
+
+=== marshalling round-trip ======================================
+  json: 231 bytes, round-trip equal = true
+    {"id":"81c6a1e507a5","type":"rpc.request","sender":"client","receiver":null,"timestamp":"2026-10-12T23:24:19.144Z","correlation_id":null,"payload":{"jsonrpc":"2...
+2026-10-12T23:24:19.144Z [client] INFO  **  type= id= fmt= bytes= marshal round-trip json
+  xml: 739 bytes, round-trip equal = true
+    <message><envelope t="dict"><entry key="id"><value t="str">81c6a1e507a5</value></entry><entry key="type"><value t="str">rpc.request</value></entry><entry key="s...
+2026-10-12T23:24:19.145Z [client] INFO  **  type= id= fmt= bytes= marshal round-trip xml
+
+=== 1. request-reply: JSON-RPC availability.check ===============
+2026-10-12T23:24:19.145Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=e0bb92ee0520 fmt=json bytes=243 
+2026-10-12T23:24:19.177Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=d7b3bbb03cf9 fmt=json bytes=286 
+  101 -> {
+    "property_id": 101,
+    "name": "Long Beach Apartment",
+    "available": true,
+    "price": 150
+  }
+2026-10-12T23:24:19.177Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=fce1561821f8 fmt=json bytes=243 
+2026-10-12T23:24:19.184Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=53bc74a343bc fmt=json bytes=282 
+  102 -> {
+    "property_id": 102,
+    "name": "Downtown Studio",
+    "available": false,
+    "price": 120
+  }
+2026-10-12T23:24:19.185Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=ebbacb7dc469 fmt=xml bytes=751 
+2026-10-12T23:24:19.192Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=8fa2d630d2a4 fmt=xml bytes=884 
+  103 (XML on the wire) -> {
+    "property_id": 103,
+    "name": "Beach House",
+    "available": true,
+    "price": 275
+  }
+2026-10-12T23:24:19.192Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=b53578c249b4 fmt=json bytes=243 
+2026-10-12T23:24:19.197Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=449792fab127 fmt=json bytes=277 
+  999 -> {
+    "code": 404,
+    "message": "Property not found",
+    "data": {
+      "property_id": 999
+    }
+  }
+2026-10-12T23:24:19.197Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=8bede55aa684 fmt=json bytes=248 
+2026-10-12T23:24:19.201Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=38fa8458b071 fmt=json bytes=285 
+  group members: [
+    "replica-1",
+    "replica-2",
+    "replica-3"
+  ]
+
+=== 2+3+4. reservation.book -> payment, pub-sub, multicast ======
+2026-10-12T23:24:19.201Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=aa2856caa7ad fmt=json bytes=267 
+2026-10-12T23:24:19.267Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=6de0db09e1a6 fmt=json bytes=789 
+  booking 101: {
+    "status": "accepted",
+    "reservation_id": "res-722b39ce",
+    "amount": 150,
+    "notified_subscribers": [
+      "analytics-service",
+      "audit-service",
+      "notification-service"
+    ],
+    "replicas_updated": [
+      "replica-1",
+      "replica-2",
+      "replica-3"
+    ]
+  }
+2026-10-12T23:24:19.267Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=b864494c61c4 fmt=json bytes=241 
+2026-10-12T23:24:19.274Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=6d3fa2375971 fmt=json bytes=267 
+  booking 101 again: {
+    "status": "rejected",
+    "message": "Property is not available"
+  }
+
+=== 4b. failure: kill replica-3, multicast again ================
+2026-10-12T23:24:19.277Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=5d4d946a77f5 fmt=json bytes=324 
+2026-10-12T23:24:19.286Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=ac97244c424e fmt=json bytes=309 
+  multicast ack: {
+    "group": "property-replicas",
+    "seq": 2,
+    "delivered_to": [
+      "replica-1",
+      "replica-2"
+    ],
+    "failed": [
+      "replica-3"
+    ]
+  }
+2026-10-12T23:24:19.286Z [client] SEND  -> http://127.0.0.1:8000/api/rpc type=rpc.request id=ec3bf4e31079 fmt=json bytes=248 
+2026-10-12T23:24:19.290Z [client] RECV  <- http://127.0.0.1:8000/api/rpc type=rpc.reply id=4c64357a34a7 fmt=json bytes=273 
+  group members now: [
+    "replica-1",
+    "replica-2"
+  ]
+
+=== subscriber / replica state ==================================
+  notification-service   received=1 cache={} view=[]
+  analytics-service      received=1 cache={} view=[]
+  audit-service          received=1 cache={} view=[]
+  replica-1              received=2 cache={"101":false,"103":true} view=["replica-1","replica-2"]
+  replica-2              received=2 cache={"101":false,"103":true} view=["replica-1","replica-2"]
+
+  GET /api/comm/logs -> 145 entries (67 SEND, 66 RECV)
+  Full log: /workspace/CECS327-Distributed-Lodging/logs/messages.jsonl

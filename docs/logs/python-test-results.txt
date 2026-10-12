@@ -1,0 +1,15 @@
+test_envelope_has_iso_timestamp (tests.test_communication.TC1_Marshalling.test_envelope_has_iso_timestamp) ... ok
+test_json_round_trip (tests.test_communication.TC1_Marshalling.test_json_round_trip) ... ok
+test_xml_round_trip_preserves_types (tests.test_communication.TC1_Marshalling.test_xml_round_trip_preserves_types) ... ok
+test_availability_check (tests.test_communication.TC2_RequestReply.test_availability_check) ... ok
+test_errors (tests.test_communication.TC2_RequestReply.test_errors) ... ok
+test_xml_rpc_call (tests.test_communication.TC2_RequestReply.test_xml_rpc_call) ... ok
+test_booking_flow (tests.test_communication.TC3_BookingPubSubGroup.test_booking_flow) ... ok
+test_join_view_multicast_and_failure (tests.test_communication.TC4_GroupMembership.test_join_view_multicast_and_failure) ... ok
+test_only_matching_topic (tests.test_communication.TC5_Pubsub_Topics.test_only_matching_topic) ... ok
+test_every_entry_is_timestamped (tests.test_communication.TC6_Logging.test_every_entry_is_timestamped) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.711s
+
+OK

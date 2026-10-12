@@ -1,0 +1,86 @@
+
+=== starting nodes (separate processes) =========================
+  property               pid=3726873
+  broker                 pid=3726874
+  coordinator            pid=3726875
+  reservation            pid=3726877
+  notification-service   pid=3726881
+  analytics-service      pid=3726882
+  audit-service          pid=3726883
+  replica-1              pid=3726884
+  replica-2              pid=3726885
+  replica-3              pid=3726886
+
+=== marshalling: envelope -> JSON bytes / XML bytes -> envelope =
+  json: 231 bytes, round-trip equal = True
+    {"id":"6a1fe99135dc","type":"rpc.request","sender":"client","receiver":null,"timestamp":"2026-10-12T23:16:55.250Z","correlation_id":null,"payload":{"jsonrpc":"2...
+2026-10-12T23:16:55.250Z [client] INFO  **  type= id= fmt= bytes= marshal round-trip json
+  xml: 741 bytes, round-trip equal = True
+    <message><envelope t="dict"><entry key="id"><value t="str">6a1fe99135dc</value></entry><entry key="type"><value t="str">rpc.request</value></entry><entry key="s...
+2026-10-12T23:16:55.251Z [client] INFO  **  type= id= fmt= bytes= marshal round-trip xml
+
+=== 1. request-reply: availability.check (JSON-RPC over TCP) ====
+2026-10-12T23:16:55.251Z [client] SEND  -> 127.0.0.1:6001 type=rpc.request id=fb5e7fc20761 fmt=json bytes=231 
+2026-10-12T23:16:55.253Z [client] RECV  <- 127.0.0.1:6001 type=rpc.reply id=d9ea8b708661 fmt=json bytes=278 
+  101 -> {'property_id': 101, 'name': 'Long Beach Apartment', 'available': True, 'price': 150}
+2026-10-12T23:16:55.253Z [client] SEND  -> 127.0.0.1:6001 type=rpc.request id=7f534708e914 fmt=json bytes=231 
+2026-10-12T23:16:55.254Z [client] RECV  <- 127.0.0.1:6001 type=rpc.reply id=18fdee3e9d60 fmt=json bytes=274 
+  102 -> {'property_id': 102, 'name': 'Downtown Studio', 'available': False, 'price': 120}
+2026-10-12T23:16:55.254Z [client] SEND  -> 127.0.0.1:6001 type=rpc.request id=7b5dc2919a79 fmt=xml bytes=741 
+2026-10-12T23:16:55.255Z [client] RECV  <- 127.0.0.1:6001 type=rpc.reply id=a3ec9388af51 fmt=xml bytes=876 
+  103 (XML on the wire) -> {'property_id': 103, 'name': 'Beach House', 'available': True, 'price': 275}
+2026-10-12T23:16:55.255Z [client] SEND  -> 127.0.0.1:6020 type=group.members id=1ae173017595 fmt=json bytes=194 
+2026-10-12T23:16:55.256Z [client] RECV  <- 127.0.0.1:6020 type=group.members.reply id=9d5ae979d95c fmt=json bytes=258 
+
+  group members: ['replica-1', 'replica-2', 'replica-3']
+
+=== 2+3+4. reservation.book -> property RPC, pub-sub, multicast =
+2026-10-12T23:16:55.257Z [client] SEND  -> 127.0.0.1:6002 type=rpc.request id=8ef12977323e fmt=json bytes=266 
+2026-10-12T23:16:55.266Z [client] RECV  <- 127.0.0.1:6002 type=rpc.reply id=2a0f976ce60b fmt=json bytes=579 
+  booking 101: {
+  "status": "accepted",
+  "reservation": {
+    "reservation_id": "R-fa7a220d",
+    "property_id": 101,
+    "property_name": "Long Beach Apartment",
+    "guest_name": "Demo Guest",
+    "nights": 2,
+    "amount": 300,
+    "status": "confirmed",
+    "created_at": "2026-10-12T23:16:55.260Z"
+  },
+  "notified_subscribers": [
+    "analytics-service",
+    "audit-service",
+    "notification-service"
+  ],
+  "replicas_updated": [
+    "replica-1",
+    "replica-2",
+    "replica-3"
+  ]
+}
+2026-10-12T23:16:55.267Z [client] SEND  -> 127.0.0.1:6002 type=rpc.request id=a59dcff408a6 fmt=json bytes=257 
+2026-10-12T23:16:55.268Z [client] RECV  <- 127.0.0.1:6002 type=rpc.reply id=84556ccde142 fmt=json bytes=280 
+  booking 101 again: {'status': 'rejected', 'message': 'Property is not available', 'property_id': 101}
+2026-10-12T23:16:55.268Z [client] SEND  -> 127.0.0.1:6002 type=rpc.request id=5804ce4a71f4 fmt=json bytes=255 
+2026-10-12T23:16:55.270Z [client] RECV  <- 127.0.0.1:6002 type=rpc.reply id=bd8efd48fd53 fmt=json bytes=280 
+  booking 102: {'status': 'rejected', 'message': 'Property is not available', 'property_id': 102}
+
+=== 4b. failure: kill replica-3, multicast again ================
+2026-10-12T23:16:55.571Z [client] SEND  -> 127.0.0.1:6020 type=group.multicast id=c308b7a43408 fmt=json bytes=270 
+2026-10-12T23:16:55.576Z [client] RECV  <- 127.0.0.1:6020 type=group.multicast.ack id=906842448018 fmt=json bytes=282 
+  multicast ack: {'group': 'property-replicas', 'seq': 2, 'delivered_to': ['replica-1', 'replica-2'], 'failed': ['replica-3']}
+2026-10-12T23:16:55.576Z [client] SEND  -> 127.0.0.1:6020 type=group.members id=de9e1fae51be fmt=json bytes=194 
+2026-10-12T23:16:55.577Z [client] RECV  <- 127.0.0.1:6020 type=group.members.reply id=5cb1ab2d7a2f fmt=json bytes=246 
+  group members now: ['replica-1', 'replica-2']
+
+=== summary from logs/messages.jsonl ============================
+  164 log entries, 73 SEND, 73 RECV
+  notification-service   ['send confirmation email to Demo Guest for Long Beach Apartment']
+  analytics-service      ['record revenue $300 for property 101']
+  audit-service          ['append audit record for R-fa7a220d']
+  replica-1              ['replica state now {101: False}', 'replica state now {101: False, 103: True}']
+  replica-2              ['replica state now {101: False}', 'replica state now {101: False, 103: True}']
+
+Full log: /workspace/lodging-main/logs/messages.jsonl
