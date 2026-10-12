@@ -106,7 +106,7 @@ BASE_URL=http://127.0.0.1:8787 npm run cf:test           # against wrangler dev
 BASE_URL=https://lodging.pitchblack.icu npm run cf:test  # against the deployed Worker
 ```
 
-> **Deploy status (2026-10-12):** the Milestone 2 Worker passes all 20 checks locally under `wrangler dev`, but it is **not deployed yet**. `wrangler deploy` failed 9 times (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls such as `wrangler deployments list` work with the same token. The live site still serves the Milestone 1 build (last deployed 2026-09-20), without the Milestone 2 endpoints. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm test --prefix cloudflare`.
+> **Deploy status:** **deployed** on 2026-10-12 at about 4:40 PM PT (Worker version `130a49b4-4b81-41b5-a1e1-cb74e8227111`). Live at **https://lodging.pitchblack.icu** (also https://pitchblack.icu). The hosted test suite passes 20/20 against the live URL: `BASE_URL=https://lodging.pitchblack.icu npm run cf:test` (screenshots 12–13).
 
 ## Test Cases
 
@@ -124,7 +124,7 @@ BASE_URL=http://127.0.0.1:8787 npm run cf:test   # Worker: 20 checks
 | TC5 | Pub-sub topic filtering | ✓ | n/a |
 | TC6 | Every log entry ISO-8601; before/after marshalling; `/api/comm/logs` | ✓ | ✓ |
 
-Latest results: Node 7/7 pass; Worker all 20 checks pass under `wrangler dev`.
+Latest results: Node 7/7 pass; Worker 20/20 checks pass under `wrangler dev` and against the live https://lodging.pitchblack.icu.
 
 ## Report and Logs
 
@@ -154,6 +154,8 @@ These are from real runs; all files are in [`docs/milestone-2/screenshots/`](doc
 | 10a | [Worker under wrangler dev: 20/20 checks](docs/milestone-2/screenshots/10a_worker_local_tests.png) |
 | 10b | [Worker GET /api/comm/logs JSON](docs/milestone-2/screenshots/10b_worker_comm_logs_json.png) |
 | 11 | [React UI (local stack) after a booking made through /api/rpc](docs/milestone-2/screenshots/11_react_ui.png) |
+| 12 | [LIVE Worker at lodging.pitchblack.icu: 20/20 checks](docs/milestone-2/screenshots/12_live_worker_tests.png) |
+| 13 | [LIVE GET /api/comm/logs JSON](docs/milestone-2/screenshots/13_live_worker_comm_logs.png) |
 
 ## Contribution Table
 
@@ -173,7 +175,7 @@ _Fill in names and contributions before submitting._
 
 Milestone 1 built Property, Reservation and Payment as Node HTTP services behind an Express gateway, with a React UI. Data is in `data/*.csv`. The original Python TCP services are archived in `archive/python-tcp/`. Milestone 1 also added a Cloudflare Worker + D1 host with the same `/api/*` contract.
 
-The Milestone 1 build is live at:
+The site (now running the Milestone 2 build) is live at:
 
 - https://lodging.pitchblack.icu (also https://pitchblack.icu, https://www.pitchblack.icu)
 - https://cecs327-lodging.tommalter5.workers.dev

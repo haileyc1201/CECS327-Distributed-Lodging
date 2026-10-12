@@ -316,7 +316,7 @@ ALL CHECKS PASSED
  "wire": "{\"id\":\"d87f3922dadb\",\"type\":\"event\",\"sender\":\"comm-hub\",\"receiver\":\"notification-service\",\"timestamp\":\"2026-10-12T23:23:16.502Z\",\"correlation_id\":null,\"payload\":{\"topic\":\"booking.created\",\"seq\":1,\"publisher\":\"worker-gateway\",\"event\":{\"reservation_id\":\"res-1e2bc68a\",\"property_id\":101,\"property_name\":\"Long Beach Apartment\",\"guest_name\":\"Demo ce07\",\"amount\":150,\"payment_id\":\"pay-b670474e\",\"refund_id\"\u2026"
 }
 ```
-**Deployment status:** the Worker passes every check under `wrangler dev`, but it is **not deployed**. `wrangler deploy` failed 9 times on 2026-10-12 (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls with the same token work. The live site still serves the Milestone 1 build. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm run cf:test`.
+**Deployment status:** **deployed.** On 2026-10-12 at about 4:40 PM PT, the Worker `cecs327-lodging` was deployed from `tom-react-frontend` (version `130a49b4-4b81-41b5-a1e1-cb74e8227111`). It is live at **https://lodging.pitchblack.icu** (also https://pitchblack.icu). The hosted test suite passes 20/20 against the live URL (`BASE_URL=https://lodging.pitchblack.icu npm run cf:test`; see Figures 12–13). Earlier deploy attempts from the build box had failed with a Cloudflare HTTP 500 (code 10013) on asset upload, so Tom deployed from his Mac.
 
 
 ## 10. Test cases
@@ -330,7 +330,7 @@ ALL CHECKS PASSED
 | TC5 | Pub-sub topic filtering | pass | pass | n/a |
 | TC6 | Every log entry ISO-8601; SEND entries have before/after | pass | pass | pass |
 
-Results: Python **Ran 10 tests — OK**; Node **7/7 pass**; Worker **all demo checks passed (local wrangler dev)**. The raw outputs are in `docs/logs/*-test-results.txt` and `docs/logs/worker-local-demo-output.txt`.
+Results: Python **Ran 10 tests — OK**; Node **7/7 pass**; Worker **all demo checks passed (local wrangler dev)**; live Worker (https://lodging.pitchblack.icu) **20/20 checks passed**. The raw outputs are in `docs/logs/*-test-results.txt` and `docs/logs/worker-local-demo-output.txt`.
 
 ## 12. Screenshots
 
@@ -383,6 +383,14 @@ All screenshots come from real runs on 2026-10-12. Terminal output was rendered 
 **Figure 11: React UI (local stack) after a booking made through /api/rpc**
 
 ![React UI (local stack) after a booking made through /api/rpc](screenshots/11_react_ui.png)
+
+**Figure 12: LIVE Worker at lodging.pitchblack.icu: 20/20 checks**
+
+![LIVE Worker at lodging.pitchblack.icu: 20/20 checks](screenshots/12_live_worker_tests.png)
+
+**Figure 13: LIVE GET /api/comm/logs JSON**
+
+![LIVE GET /api/comm/logs JSON](screenshots/13_live_worker_comm_logs.png)
 
 ## 13. Contribution table
 
