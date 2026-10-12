@@ -1,89 +1,52 @@
-# CECS 327 Distributed Lodging
+# CECS 327 Distributed Lodging, Milestone 2: Communication
 
-Milestone 1 project for CECS 327, Section 02 at California State University, Long Beach.
+CECS 327, Section 02, California State University, Long Beach.
 
 **Team:** Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter, and Anthony Torres
 
-**Milestone 1 due:** September 24, 2026
+A distributed lodging reservation system similar to Airbnb. This branch (`main`) is the **Python simulation**: every node is a separate OS process, and nodes communicate over TCP sockets. The live web version of the same protocol (Node microservices, React UI, Cloudflare Workers + D1) is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend).
 
-## Project
+## What Milestone 2 Delivers
 
-We are building a distributed lodging reservation system similar to Airbnb. Guests will be able to search properties and make reservations, while hosts will be able to create listings and manage availability.
+| Requirement | How | Where in the code |
+|---|---|---|
+| Marshalling / unmarshalling | Message envelope `{id, type, sender, receiver, timestamp, correlation_id, payload}` ↔ JSON bytes or typed XML; before/after state logged | `src/communication/codec.py`, `transport.py` |
+| Sockets + RPC | JSON-RPC 2.0 over TCP sockets with length-prefixed frames (`[len][J/X][body]`) | `src/communication/rpc.py`, `server.py`, `transport.py` |
+| Request-reply | `availability.check`, `property.get`, `reservation.book` (Reservation → Property) | `src/communication/services.py` |
+| Publish-subscribe (multiple subscribers) | Broker; `booking.created` → notification, analytics and audit services | `src/communication/broker.py` |
+| Group communication (membership) | Coordinator + 3 property replicas: join/leave, `group.view`, numbered multicast with acks, failure detection | `src/communication/group.py` |
+| Timestamped logging | Every SEND/RECV as ISO-8601 JSON Lines in `logs/messages.jsonl` + stdout | `src/communication/msglog.py` |
+| Demo + tests | Starts all nodes as processes and runs every mechanism; 10 unit/integration tests | `src/communication/demo.py`, `tests/test_communication.py` |
 
-For Milestone 1, we are starting with three backend services:
+### Nodes and ports
 
-- Property Service
-- Reservation Service
-- Payment Service
-
-The client starts the request. The basic flow for this milestone is:
-
-```text
-Client
-  -> Property Service
-  -> Reservation Service
-  -> Payment Service
-  -> Reservation result
-```
-
-We also use shared persistent storage for important data such as properties and reservations.
-
-User Service and Review Service are planned for later milestones.
-
-## Repository Structure
-
-```text
-.
-├── docs/
-│   ├── diagrams/
-│   └── milestone-1/
-│       ├── 01-system-overview.md
-│       ├── 02-architecture.md
-│       ├── 03-components.md
-│       ├── 04-system-model.md
-│       └── 05-communication-flow.md
-├── src/
-│   ├── client/
-│   ├── property-service/
-│   ├── reservation-service/
-│   ├── payment-service/
-│   └── communication/   # milestone 2 comm layer
-├── tests/
-├── data/
-├── logs/
-├── screenshots/
-└── README.md
-```
-
-## Milestone 1 Goal
-
-The Milestone 1 prototype needs at least three communicating processes or services, a simple client request, a server response, and logs showing the messages exchanged.
-
-## Communication Milestone (Python simulation)
-
-This branch is the **Python simulation**. The live Node/React/Cloudflare version of the same protocol is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend).
-The full report is in [`docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf`](docs/communication-milestone/CECS327_Communication_Milestone_Report.pdf) ([markdown](docs/communication-milestone/CECS327_Communication_Milestone_Report.md)). Real run logs are in [`docs/logs/`](docs/logs).
-
-| Requirement | Where |
+| Node | Port |
 |---|---|
-| Marshalling / unmarshalling (JSON + typed XML), before/after logged | `src/communication/codec.py`, `transport.py`, `msglog.py` |
-| Sockets + RPC | JSON-RPC 2.0 over TCP sockets with length-prefixed frames (`rpc.py`) |
-| Request-reply | `availability.check`, `property.get`, `reservation.book` (Reservation → Property) |
-| Publish-subscribe, multiple subscribers | `broker.py`: `booking.created` → notification, analytics, audit services |
-| Group communication + membership | `group.py`: group `property-replicas`, join/leave/view, numbered multicast with acks, failure detection |
-| ISO-8601 logging of every send/receive | `logs/messages.jsonl` (+ stdout) |
+| property-rpc | 6001 |
+| reservation-rpc | 6002 |
+| broker (pub-sub) | 6010 |
+| group-coordinator | 6020 |
+| replica-1 / -2 / -3 | 6101 / 6102 / 6103 |
+| notification-, analytics-, audit-service | subscribers (connect to broker) |
 
-Ports: property-rpc 6001, reservation-rpc 6002, broker 6010, group-coordinator 6020, replicas 6101-6103. Hailey's Milestone 1 services (5001/5002/5003) and `src/client/client.py` are unchanged and still work.
+## Required Software
 
-### Required software
+- Python 3.10 or newer (standard library only)
+- Git
 
-- Python 3.10+ (standard library only, nothing to `pip install`)
+## Install Dependencies
 
-### Install dependencies
+There are no third-party packages to install:
 
-None. Clone the repo and run from the repository root.
+```bash
+git clone https://github.com/haileyc1201/CECS327-Distributed-Lodging.git
+cd CECS327-Distributed-Lodging
+python3 --version   # 3.10+
+```
 
-### Start each service (one terminal each, from the repo root)
+## Start Each Service
+
+Run each command in its own terminal, from the repository root:
 
 ```bash
 python3 -m src.communication.run property
@@ -98,23 +61,23 @@ python3 -m src.communication.run replica replica-2 6102
 python3 -m src.communication.run replica replica-3 6103
 ```
 
-### Run the demo
+## Run the Demo
 
 ```bash
 python3 -m src.communication.demo
 ```
 
-This starts all 10 nodes as separate processes. It then shows the JSON/XML marshalling round-trip, RPC request-reply (JSON and XML on the wire), a booking that triggers pub-sub to 3 subscribers and a multicast to 3 replicas, and a rejected double booking. It kills replica-3 to show failure detection and prints a summary of `logs/messages.jsonl`.
+The demo:
 
-Original Milestone 1 flow (unchanged):
+1. Starts all 10 nodes as separate processes.
+2. Shows the JSON and XML marshalling round-trip.
+3. Runs RPC request-reply, with JSON and XML on the wire.
+4. Books property 101. The booking calls Property, publishes to 3 subscribers and multicasts to 3 replicas.
+5. Shows a double booking being rejected.
+6. Kills replica-3. The next multicast detects the failure and the group view shrinks.
+7. Prints a summary from `logs/messages.jsonl`.
 
-```bash
-python3 src/property-service/property_service.py &
-python3 src/reservation-service/reservation_service.py &
-python3 src/client/client.py
-```
-
-### Reproduce the test cases
+## Test Cases
 
 ```bash
 python3 -m unittest discover -s tests -t . -v
@@ -122,16 +85,28 @@ python3 -m unittest discover -s tests -t . -v
 
 | # | Test case |
 |---|---|
-| TC1 | JSON and XML round-trip keeps types; ISO-8601 envelope timestamp |
-| TC2 | Request-reply `availability.check` / `property.get` (JSON and XML); 404 and -32601 errors |
-| TC3 | Booking → 3 subscribers get `booking.created`, 3 replicas apply the update, double booking rejected |
-| TC4 | Group join/view/multicast, failed member removed, leave |
-| TC5 | Pub-sub delivers only to matching topic |
-| TC6 | Every log entry ISO-8601; SEND entries carry before/after marshalling |
+| TC1 | JSON and XML marshal/unmarshal round-trip keeps types; ISO-8601 envelope timestamp |
+| TC2 | Request-reply `availability.check` / `property.get` in JSON and XML; 404 and -32601 errors |
+| TC3 | Booking → 3 subscribers receive `booking.created`, 3 replicas apply the multicast; double booking rejected |
+| TC4 | Group join/view/multicast; a failed member is removed; leave updates the view |
+| TC5 | Pub-sub delivers only to the matching topic |
+| TC6 | Every log entry is ISO-8601; SEND entries carry the message before and after marshalling |
 
-### Contribution table
+Latest result: `Ran 10 tests ... OK` (see `docs/logs/python-test-results.txt`).
 
-| Member | Contribution |
+## Report and Logs
+
+- **Report (PDF):** [`docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf`](docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf) ([markdown source](docs/milestone-2/CECS327_Milestone2_Communication_Report.md)). It covers the communication model, message formats, marshalling, why sockets/RPC, the pub-sub and group designs, a side-by-side comparison of the Python and web/Cloudflare paths, and real log excerpts.
+- **Logs from real runs:** [`docs/logs/`](docs/logs)
+  - `python-messages.jsonl`, `python-demo-output.txt`, `python-test-results.txt`: Python simulation (`main`)
+  - `node-messages.jsonl`, `node-demo-output.txt`, `node-test-results.txt`: Node stack (`tom-react-frontend`)
+  - `worker-local-messages.jsonl`, `worker-local-demo-output.txt`: Cloudflare Worker under `wrangler dev`
+- Runtime logs are written to `logs/messages.jsonl` (git-ignored).
+- No video for this milestone.
+
+## Contribution Table
+
+| Member | Milestone 2 contribution |
 |---|---|
 | _Member 1_ | _TBD_ |
 | _Member 2_ | _TBD_ |
@@ -141,28 +116,52 @@ python3 -m unittest discover -s tests -t . -v
 | _Member 6_ | _TBD_ |
 | _Member 7_ | _TBD_ |
 
-## Clone the Repository
+_Fill in names and contributions before submitting._
+
+## Milestone 1 (previous)
+
+Milestone 1 (due September 24, 2026) built the first three socket services. They are still in the repo and unchanged:
+
+- `src/property-service/property_service.py` (:5001)
+- `src/reservation-service/reservation_service.py` (:5002)
+- `src/payment-service/payment_service.py` (:5003)
+- `src/client/client.py`
+- `data/properties.json`
 
 ```bash
-git clone https://github.com/haileyc1201/CECS327-Distributed-Lodging.git
-cd CECS327-Distributed-Lodging
+python3 src/property-service/property_service.py &
+python3 src/reservation-service/reservation_service.py &
+python3 src/client/client.py
+```
+
+The design documents are in `docs/milestone-1/`.
+
+## Repository Structure
+
+```text
+.
+├── docs/
+│   ├── milestone-1/
+│   ├── milestone-2/          # Milestone 2 report (md + pdf)
+│   └── logs/                 # real run logs
+├── src/
+│   ├── communication/        # Milestone 2 communication layer
+│   ├── client/
+│   ├── property-service/
+│   ├── reservation-service/
+│   └── payment-service/
+├── tests/
+├── data/
+├── logs/
+└── README.md
 ```
 
 ## Working on the Project
 
-Before starting work:
-
 ```bash
 git pull
 git checkout -b yourname-task
+# ...changes...
+git add . && git commit -m "Describe what you changed"
+git push -u origin yourname-task   # then open a pull request
 ```
-
-After making changes:
-
-```bash
-git add .
-git commit -m "Describe what you changed"
-git push -u origin yourname-task
-```
-
-Then open a pull request on GitHub so the change can be merged into `main`.

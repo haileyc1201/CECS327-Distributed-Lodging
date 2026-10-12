@@ -1,4 +1,4 @@
-# CECS 327 Distributed Lodging — Communication Milestone Report
+# CECS 327 Distributed Lodging — Milestone 2: Communication Mechanisms Report
 
 **Course:** CECS 327, Section 02, CSULB  **Repository:** https://github.com/haileyc1201/CECS327-Distributed-Lodging
 **Branches:** `main` (Python simulation) · `tom-react-frontend` (live Node + React + Cloudflare Workers/D1 version)
@@ -316,7 +316,7 @@ ALL CHECKS PASSED
  "wire": "{\"id\":\"d87f3922dadb\",\"type\":\"event\",\"sender\":\"comm-hub\",\"receiver\":\"notification-service\",\"timestamp\":\"2026-10-12T23:23:16.502Z\",\"correlation_id\":null,\"payload\":{\"topic\":\"booking.created\",\"seq\":1,\"publisher\":\"worker-gateway\",\"event\":{\"reservation_id\":\"res-1e2bc68a\",\"property_id\":101,\"property_name\":\"Long Beach Apartment\",\"guest_name\":\"Demo ce07\",\"amount\":150,\"payment_id\":\"pay-b670474e\",\"refund_id\"\u2026"
 }
 ```
-**Deployment status:** the Worker passes every check under `wrangler dev`. `wrangler deploy` to the existing `cecs327-lodging` Worker (pitchblack.icu) failed on 2026-10-12. The Cloudflare API returned HTTP 500 (code 10013) on `assets-upload-session` in three attempts, with wrangler 4.135 and 4.149. The live site still serves the earlier build, without the communication endpoints. To deploy, run `npm run cf:deploy` with Node 22+, then run `BASE_URL=https://pitchblack.icu npm run cf:test`.
+**Deployment status:** the Worker passes every check under `wrangler dev`, but it is **not deployed**. `wrangler deploy` failed 6+ times on 2026-10-12 (wrangler 4.135, 4.149 and latest, clean build, with backoff). Cloudflare returned HTTP 500 / code 10013 on `assets-upload-session`, while read calls with the same token work. The live site still serves the Milestone 1 build. To deploy: `npm run cf:deploy` (Node 22+), then `BASE_URL=https://lodging.pitchblack.icu npm run cf:test`.
 
 
 ## 10. Test cases
