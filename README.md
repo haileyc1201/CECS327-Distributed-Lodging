@@ -4,7 +4,7 @@ CECS 327, Section 02, California State University, Long Beach.
 
 **Team:** Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter, and Anthony Torres
 
-A distributed lodging reservation system similar to Airbnb. This branch (`main`) is the **Python simulation**: every node is a separate OS process, and nodes communicate over TCP sockets. The live web version of the same protocol (Node microservices, React UI, Cloudflare Workers + D1) is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend).
+A distributed lodging reservation system similar to Airbnb. This branch (`main`) is the **Python simulation**: every node is a separate OS process, and nodes communicate over TCP sockets. The live web version of the same protocol (Node microservices, React UI, Cloudflare Workers + D1, live at https://lodging.pitchblack.icu) is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend).
 
 ## What Milestone 2 Delivers
 
@@ -122,6 +122,8 @@ These are from real runs; all files are in [`docs/milestone-2/screenshots/`](doc
 | 10a | [Worker under wrangler dev: 20/20 checks](docs/milestone-2/screenshots/10a_worker_local_tests.png) |
 | 10b | [Worker GET /api/comm/logs JSON](docs/milestone-2/screenshots/10b_worker_comm_logs_json.png) |
 | 11 | [React UI (local stack) after a booking made through /api/rpc](docs/milestone-2/screenshots/11_react_ui.png) |
+| 12 | [LIVE Worker at lodging.pitchblack.icu: 20/20 checks](docs/milestone-2/screenshots/12_live_worker_tests.png) |
+| 13 | [LIVE GET /api/comm/logs JSON](docs/milestone-2/screenshots/13_live_worker_comm_logs.png) |
 
 ## Contribution Table
 
