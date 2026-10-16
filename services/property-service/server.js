@@ -3,6 +3,7 @@
  * GET /properties, GET /properties/:id, PATCH /properties/:id/availability
  */
 const express = require('express');
+const { sendError, sanitizeDownstream } = require('../shared/errors');
 const {
   loadProperties,
   findProperty,
@@ -31,8 +32,7 @@ app.get('/properties', (_req, res) => {
     log(`list_properties -> ${properties.length} items`);
     res.json({ status: 'success', properties });
   } catch (err) {
-    log(`list error: ${err.message}`);
-    res.status(500).json({ status: 'error', message: err.message });
+    sendError(res, log, 'list error', err, 500);
   }
 });
 
@@ -45,8 +45,7 @@ app.get('/properties/:id', (req, res) => {
     log(`get_property ${req.params.id}`);
     return res.json({ status: 'success', property });
   } catch (err) {
-    log(`get error: ${err.message}`);
-    return res.status(500).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'get error', err, 500);
   }
 });
 
@@ -64,8 +63,7 @@ app.patch('/properties/:id/availability', (req, res) => {
     const property = findProperty(req.params.id);
     return res.json({ status: 'success', property });
   } catch (err) {
-    log(`availability error: ${err.message}`);
-    return res.status(500).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'availability error', err, 500);
   }
 });
 

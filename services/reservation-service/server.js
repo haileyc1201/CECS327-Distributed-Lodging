@@ -4,6 +4,7 @@
  * GET /reservations, POST /reservations, POST /reservations/cancel
  */
 const express = require('express');
+const { sendError, sanitizeDownstream } = require('../shared/errors');
 const crypto = require('crypto');
 const {
   loadReservations,
@@ -107,8 +108,7 @@ app.get('/reservations', (_req, res) => {
     log(`list_reservations -> ${reservations.length}`);
     res.json({ status: 'success', reservations });
   } catch (err) {
-    log(`list error: ${err.message}`);
-    res.status(500).json({ status: 'error', message: err.message });
+    sendError(res, log, 'list error', err, 500);
   }
 });
 
@@ -173,8 +173,7 @@ app.post('/reservations', async (req, res) => {
       ...comm,
     });
   } catch (err) {
-    log(`book error: ${err.message}`);
-    return res.status(502).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'book error', err, 502);
   }
 });
 
@@ -232,8 +231,7 @@ app.post('/reservations/cancel', async (req, res) => {
       refund: refundResponse,
     });
   } catch (err) {
-    log(`cancel error: ${err.message}`);
-    return res.status(502).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'cancel error', err, 502);
   }
 });
 

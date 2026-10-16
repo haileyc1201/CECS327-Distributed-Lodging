@@ -75,12 +75,24 @@ function logServiceLabel(file: string): string {
 
 const CARD_HUES = [210, 160, 30, 280, 190, 340, 120, 45, 250, 15, 200, 300]
 
+const GENERIC_ERROR = 'Something went wrong. Please try again.'
+
 async function liveApi<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
     ...options,
   })
-  const data = await res.json()
+  let data: { status?: string; message?: string; ref?: string }
+  try {
+    data = await res.json()
+  } catch {
+    // Non-JSON reply (gateway down, proxy error page): never show the raw text.
+    throw new Error(GENERIC_ERROR)
+  }
+  // Masked backend error: show the generic message plus the reference ID.
+  if (data && data.status === 'error' && data.ref) {
+    throw new Error(`${data.message ?? GENERIC_ERROR} (ref: ${data.ref})`)
+  }
   return data as T
 }
 

@@ -14,6 +14,7 @@ const cors = require('cors');
 const {
   makeEnvelope, makeLogger, sendMessage, envelopeBody, replyEnvelope, readMessageLog,
 } = require('../shared/messaging');
+const { rpcError } = require('../shared/errors');
 
 const HOST = process.env.HUB_HOST || '127.0.0.1';
 const PORT = Number(process.env.HUB_PORT || 5010);
@@ -101,7 +102,7 @@ async function http(url, opts = {}) {
 }
 
 class RpcError extends Error {
-  constructor(code, message, data) { super(message); this.code = code; this.data = data; }
+  constructor(code, message, data) { super(message); this.name = 'RpcError'; this.code = code; this.data = data; }
 }
 
 const methods = {
@@ -152,7 +153,7 @@ app.post('/rpc', body, async (req, res) => {
     try {
       out = { jsonrpc: '2.0', id: rpc.id, result: await fn(rpc.params || {}, req.envelope.sender) };
     } catch (err) {
-      out = { jsonrpc: '2.0', id: rpc.id, error: { code: err.code || -32000, message: err.message, data: err.data } };
+      out = { jsonrpc: '2.0', id: rpc.id, error: rpcError((m) => logger.info(m), `rpc ${rpc.method}`, err) };
     }
   }
   reply(req, res, 'rpc.reply', out);

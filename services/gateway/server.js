@@ -3,6 +3,7 @@
  * Proxies /api/* to Property / Reservation services; hard reset + logs.
  */
 const express = require('express');
+const { sendError, sanitizeDownstream } = require('../shared/errors');
 const cors = require('cors');
 const { resetDemoData, readRecentLogs, appendLog } = require('../shared/csv');
 
@@ -27,7 +28,7 @@ async function proxyJson(url, options = {}) {
     ...options,
   });
   const data = await res.json();
-  return { httpStatus: res.status, data };
+  return { httpStatus: res.status, data: sanitizeDownstream(res.status, data, log, `proxy ${url}`) };
 }
 
 app.get('/api/health', (_req, res) => {
@@ -39,8 +40,7 @@ app.get('/api/properties', async (_req, res) => {
     const { data } = await proxyJson(`${PROPERTY_URL}/properties`);
     res.json(data);
   } catch (err) {
-    log(`properties error: ${err.message}`);
-    res.status(502).json({ status: 'error', message: err.message });
+    sendError(res, log, 'properties error', err, 502);
   }
 });
 
@@ -49,8 +49,7 @@ app.get('/api/properties/:id', async (req, res) => {
     const { httpStatus, data } = await proxyJson(`${PROPERTY_URL}/properties/${req.params.id}`);
     res.status(httpStatus).json(data);
   } catch (err) {
-    log(`get property error: ${err.message}`);
-    res.status(502).json({ status: 'error', message: err.message });
+    sendError(res, log, 'get property error', err, 502);
   }
 });
 
@@ -70,8 +69,7 @@ app.post('/api/reservations', async (req, res) => {
     const code = data.status === 'accepted' ? 200 : httpStatus >= 400 ? httpStatus : 400;
     return res.status(code).json(data);
   } catch (err) {
-    log(`book error: ${err.message}`);
-    return res.status(502).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'book error', err, 502);
   }
 });
 
@@ -80,8 +78,7 @@ app.get('/api/reservations', async (_req, res) => {
     const { data } = await proxyJson(`${RESERVATION_URL}/reservations`);
     res.json(data);
   } catch (err) {
-    log(`list reservations error: ${err.message}`);
-    res.status(502).json({ status: 'error', message: err.message });
+    sendError(res, log, 'list reservations error', err, 502);
   }
 });
 
@@ -98,8 +95,7 @@ app.post('/api/reservations/cancel', async (req, res) => {
     const code = data.status === 'cancelled' ? 200 : httpStatus >= 400 ? httpStatus : 400;
     return res.status(code).json(data);
   } catch (err) {
-    log(`cancel error: ${err.message}`);
-    return res.status(502).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'cancel error', err, 502);
   }
 });
 
@@ -112,8 +108,7 @@ app.delete('/api/reservations/:id', async (req, res) => {
     const code = data.status === 'cancelled' ? 200 : httpStatus >= 400 ? httpStatus : 400;
     return res.status(code).json(data);
   } catch (err) {
-    log(`delete cancel error: ${err.message}`);
-    return res.status(502).json({ status: 'error', message: err.message });
+    return sendError(res, log, 'delete cancel error', err, 502);
   }
 });
 
@@ -123,8 +118,7 @@ app.post('/api/reset', (_req, res) => {
     log('Demo data reset');
     res.json({ status: 'ok', message: 'Demo data reset' });
   } catch (err) {
-    log(`reset error: ${err.message}`);
-    res.status(500).json({ status: 'error', message: err.message });
+    sendError(res, log, 'reset error', err, 500);
   }
 });
 
@@ -133,7 +127,7 @@ app.get('/api/logs', (_req, res) => {
     const logs = readRecentLogs(100);
     res.json({ status: 'ok', logs });
   } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
+    sendError(res, log, 'logs error', err, 500);
   }
 });
 
@@ -145,9 +139,13 @@ app.post('/api/rpc', express.text({ type: '*/*' }), async (req, res) => {
       headers: { 'Content-Type': req.headers['content-type'] || 'application/json' },
       body: typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
     });
-    res.status(r.status).type(r.headers.get('content-type') || 'application/json').send(await r.text());
+    const text = await r.text();
+    if (r.status >= 500) {
+      return res.status(r.status).json(sanitizeDownstream(r.status, text, log, 'rpc proxy'));
+    }
+    res.status(r.status).type(r.headers.get('content-type') || 'application/json').send(text);
   } catch (err) {
-    res.status(502).json({ status: 'error', message: err.message });
+    sendError(res, log, 'rpc proxy error', err, 502);
   }
 });
 
@@ -156,7 +154,7 @@ app.get('/api/comm/logs', async (req, res) => {
     const { data } = await proxyJson(`${HUB_URL}/logs?limit=${Number(req.query.limit) || 200}`);
     res.json(data);
   } catch (err) {
-    res.status(502).json({ status: 'error', message: err.message });
+    sendError(res, log, 'comm logs error', err, 502);
   }
 });
 

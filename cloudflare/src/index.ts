@@ -14,6 +14,7 @@ import {
 } from './services/reservationService'
 import { findProperty, listProperties } from './services/propertyService'
 import type { Env } from './types'
+import { maskError } from './lib/errors'
 import { announceBooking, comm } from './comm/routes'
 import { MessageLog } from './comm/msglog'
 
@@ -41,9 +42,7 @@ app.get('/api/properties', async (c) => {
     const properties = await listProperties(c.env.DB)
     return c.json({ status: 'success', properties })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`properties error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'properties error', err), 502)
   }
 })
 
@@ -55,9 +54,7 @@ app.get('/api/properties/:id', async (c) => {
     }
     return c.json({ status: 'success', property })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`get property error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'get property error', err), 502)
   }
 })
 
@@ -83,9 +80,7 @@ app.post('/api/reservations', async (c) => {
     }
     return c.json(data, httpStatus as 200 | 400 | 502)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`book error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'book error', err), 502)
   }
 })
 
@@ -94,9 +89,7 @@ app.get('/api/reservations', async (c) => {
     const reservations = await listReservations(c.env.DB)
     return c.json({ status: 'success', reservations })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`list reservations error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'list reservations error', err), 502)
   }
 })
 
@@ -111,9 +104,7 @@ app.post('/api/reservations/cancel', async (c) => {
     )
     return c.json(data, httpStatus as 200 | 400 | 502)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`cancel error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'cancel error', err), 502)
   }
 })
 
@@ -125,9 +116,7 @@ app.delete('/api/reservations/:id', async (c) => {
     )
     return c.json(data, httpStatus as 200 | 400 | 502)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`delete cancel error: ${message}`)
-    return c.json({ status: 'error', message }, 502)
+    return c.json(maskError(gatewayLog, 'delete cancel error', err), 502)
   }
 })
 
@@ -137,9 +126,7 @@ app.post('/api/reset', async (c) => {
     gatewayLog('Demo data reset')
     return c.json({ status: 'ok', message: 'Demo data reset' })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    gatewayLog(`reset error: ${message}`)
-    return c.json({ status: 'error', message }, 500)
+    return c.json(maskError(gatewayLog, 'reset error', err), 500)
   }
 })
 
@@ -148,8 +135,7 @@ app.get('/api/logs', (c) => {
     const logs = readRecentLogs(100)
     return c.json({ status: 'ok', logs })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return c.json({ status: 'error', message }, 500)
+    return c.json(maskError(gatewayLog, 'logs error', err), 500)
   }
 })
 

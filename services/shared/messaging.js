@@ -177,7 +177,8 @@ function envelopeBody(logger) {
         logger.recv(`${req.socket.remoteAddress}:${req.socket.remotePort}`, raw, req.envelope, fmt);
         next();
       } catch (err) {
-        res.status(400).json({ status: 'error', message: `unmarshal failed: ${err.message}` });
+        logger.info(`unmarshal failed: ${err.message}`);
+        res.status(400).json({ status: "error", message: "unmarshal failed: message is not valid JSON or XML" });
       }
     });
   };

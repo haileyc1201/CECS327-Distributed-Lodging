@@ -16,6 +16,7 @@ import { MessageLog, readMessageLog } from './msglog'
 import { findProperty, listProperties } from '../services/propertyService'
 import { bookReservation, listReservations } from '../services/reservationService'
 import type { Env } from '../types'
+import { rpcError } from '../lib/errors'
 
 export const GATEWAY = 'worker-gateway'
 export const REPLICA_GROUP = 'property-replicas'
@@ -49,7 +50,7 @@ export async function announceBooking(env: Env, log: MessageLog, reservation: Re
 }
 
 class RpcError extends Error {
-  constructor(public code: number, message: string, public data?: unknown) { super(message) }
+  constructor(public code: number, message: string, public data?: unknown) { super(message); this.name = 'RpcError' }
 }
 
 type Method = (p: Record<string, any>, env: Env, log: MessageLog, sender: string) => Promise<unknown> | unknown
@@ -97,7 +98,7 @@ comm.post('/rpc', async (c) => {
   try {
     env = unmarshal(wire, fmt)
   } catch (err) {
-    return c.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: `Parse error: ${err}` } }, 400)
+    return c.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: "Parse error: message is not valid JSON or XML" } }, 400)
   }
   const peer = c.req.header('cf-connecting-ip') || 'client'
   log.recv(GATEWAY, peer, wire, env, fmt)
@@ -112,8 +113,7 @@ comm.post('/rpc', async (c) => {
     try {
       out = { jsonrpc: '2.0', id: rpc.id, result: await fn(rpc.params || {}, c.env, log, env.sender) }
     } catch (err) {
-      const e = err as RpcError
-      out = { jsonrpc: '2.0', id: rpc.id, error: { code: e.code || -32000, message: e.message, data: e.data } }
+      out = { jsonrpc: '2.0', id: rpc.id, error: rpcError((m) => log.info(GATEWAY, m), `rpc ${rpc.method}`, err) }
     }
   }
   const reply = makeEnvelope('rpc.reply', GATEWAY, out, { receiver: env.sender, correlationId: env.id })
