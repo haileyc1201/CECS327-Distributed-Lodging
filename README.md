@@ -129,19 +129,6 @@ All screenshots come from real runs and live in [`docs/milestone-2/screenshots/`
 - At runtime, messages are written to `logs/messages.jsonl`, which git ignores.
 - There is no video for this milestone.
 
-## Contribution Table
-
-| Member | Milestone 2 contribution |
-|---|---|
-| _Member 1_ | _TBD_ |
-| _Member 2_ | _TBD_ |
-| _Member 3_ | _TBD_ |
-| _Member 4_ | _TBD_ |
-| _Member 5_ | _TBD_ |
-| _Member 6_ | _TBD_ |
-| _Member 7_ | _TBD_ |
-
-_Fill in names and contributions before submitting._
 
 ## Milestone 1
 
