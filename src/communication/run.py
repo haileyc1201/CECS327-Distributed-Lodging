@@ -1,11 +1,16 @@
 """Launch one node of the communication demo.
 
-    python -m src.communication.run property
-    python -m src.communication.run reservation
+    python -m src.communication.run property [--ring 6301,6302,...]
+    python -m src.communication.run reservation [--ring 6301,6302,...]
     python -m src.communication.run broker
     python -m src.communication.run coordinator
     python -m src.communication.run subscriber notification-service
     python -m src.communication.run replica replica-1 6101
+    python -m src.communication.run ring ring-A 6301            # first ring peer
+    python -m src.communication.run ring ring-B 6302 6301       # joins via the peer on 6301
+
+``property --ring`` and ``reservation --ring`` store their records in the ring overlay
+(the listed ports are bootstrap peers) instead of in memory.
 """
 from __future__ import annotations
 
@@ -15,6 +20,7 @@ import time
 from .broker import Broker, Subscriber
 from .group import GroupCoordinator, GroupMember
 from .msglog import MessageLogger
+from .ring import RingClient, RingNode
 from .services import (BOOKING_TOPIC, PORTS, REPLICA_GROUP, SUBSCRIBERS, PropertyNode, ReservationNode,
                        replica_handler)
 
@@ -26,12 +32,19 @@ def _forever(server):
         server.stop()
 
 
+def _ring_client(name: str, argv: list[str]) -> RingClient | None:
+    """Build a RingClient from ``--ring p1,p2,...`` if present."""
+    if len(argv) > 2 and argv[1] == "--ring":
+        return RingClient(name, [("127.0.0.1", int(p)) for p in argv[2].split(",")])
+    return None
+
+
 def main(argv: list[str]) -> None:
     role = argv[0] if argv else ""
     if role == "property":
-        _forever(PropertyNode())
+        _forever(PropertyNode(ring=_ring_client("property-rpc", argv)))
     elif role == "reservation":
-        _forever(ReservationNode())
+        _forever(ReservationNode(ring=_ring_client("reservation-rpc", argv)))
     elif role == "broker":
         _forever(Broker(port=PORTS["broker"]))
     elif role == "coordinator":
@@ -61,6 +74,18 @@ def main(argv: list[str]) -> None:
         except KeyboardInterrupt:
             member.leave()
             member.stop()
+    elif role == "ring":
+        name, port = argv[1], int(argv[2])
+        node = RingNode(name, port=port).start()
+        if len(argv) > 3:
+            node.join("127.0.0.1", int(argv[3]))
+        try:
+            while not node._stop.is_set():          # stops after a ring.leave request
+                time.sleep(1)
+                node.stabilize()                    # heartbeat: ping successor, repair if it crashed
+        except KeyboardInterrupt:
+            node.leave()
+            node.stop()
     else:
         print(__doc__)
         sys.exit(2)

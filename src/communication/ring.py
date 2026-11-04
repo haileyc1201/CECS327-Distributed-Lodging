@@ -17,6 +17,10 @@ its predecessor's keys, so one crash loses no data.
            {promote: true} (which promotes the replica to primary data) and re-replicates.
     Data   ring.store / ring.fetch go to the key's owner; ring.replicate copies the
            owner's keys to its successor. ring.state describes a peer.
+    Admin  ring.leave asks a peer to leave gracefully and shut down (used by the demo).
+
+``RingClient`` lets a process that is *not* a ring member (e.g. the Property node)
+read and write keys through any live bootstrap peer.
 
 A "peer" on the wire is {"name", "host", "port", "id"}. Each request is one
 short-lived connection answered by one ``<type>.reply`` envelope.
@@ -26,8 +30,10 @@ from __future__ import annotations
 import hashlib
 import socket
 import threading
+import time
 
 from .codec import make_envelope
+from .msglog import MessageLogger
 from .server import FramedServer
 from .transport import ConnectionClosed, connect, recv_message, send_message
 
@@ -75,6 +81,7 @@ class RingNode(FramedServer):
             "ring.store": self._h_store,
             "ring.fetch": self._h_fetch,
             "ring.state": lambda body: self.state(),
+            "ring.leave": self._h_leave,
         }
 
     # ------------------------------------------------------------ helpers
@@ -276,6 +283,11 @@ class RingNode(FramedServer):
             found = body["key"] in self.data
             return {"owner": self.name, "found": found, "value": self.data.get(body["key"])}
 
+    def _h_leave(self, body: dict) -> dict:
+        self.leave()
+        threading.Timer(0.5, self.stop).start()   # close the listener after the reply is sent
+        return {"left": self.name}
+
     # ------------------------------------------------------------ wire
 
     def handle(self, conn, message, fmt, peer) -> bool:
@@ -290,3 +302,58 @@ class RingNode(FramedServer):
         send_message(conn, make_envelope(kind + ".reply", self.name, payload, receiver=message.get("sender"),
                                          correlation_id=message.get("id")), self.logger, peer, fmt)
         return False  # one request per connection
+
+
+class RingClient:
+    """Reads and writes ring data from outside the ring.
+
+    Finds a key's owner through the first reachable bootstrap peer, then talks
+    to the owner directly. Operations are retried so that a lookup made while a
+    crashed peer is still being repaired (one heartbeat round) succeeds shortly after.
+    """
+
+    def __init__(self, name: str, bootstraps: list[tuple[str, int]], retries: int = 5, delay: float = 1.0):
+        self.name, self.bootstraps = name, list(bootstraps)
+        self.retries, self.delay = retries, delay
+        self.logger = MessageLogger(name)
+
+    def call(self, addr: tuple[str, int], msg_type: str, payload: dict) -> dict:
+        label = f"{addr[0]}:{addr[1]}"
+        with connect(*addr, timeout=3) as s:
+            send_message(s, make_envelope(msg_type, self.name, payload), self.logger, label)
+            reply, _ = recv_message(s, self.logger, label)
+        body = reply["payload"]
+        if "error" in body:
+            raise RingError(body["error"])
+        return body
+
+    def _owner(self, key: str) -> dict:
+        last: Exception = RingError("no bootstrap peers configured")
+        for addr in self.bootstraps:
+            try:
+                return self.call(addr, "ring.find_successor", {"id": ring_id(key)})["peer"]
+            except NET_ERRORS as exc:
+                last = exc
+        raise last
+
+    def _retry(self, op):
+        last: Exception | None = None
+        for _ in range(self.retries):
+            try:
+                return op()
+            except NET_ERRORS as exc:
+                last = exc
+                time.sleep(self.delay)
+        raise RingError(f"ring unavailable after {self.retries} attempts: {last}")
+
+    def put(self, key: str, value) -> str:
+        def op():
+            o = self._owner(key)
+            return self.call((o["host"], o["port"]), "ring.store", {"key": key, "value": value})["owner"]
+        return self._retry(op)
+
+    def get(self, key: str) -> dict:
+        def op():
+            o = self._owner(key)
+            return self.call((o["host"], o["port"]), "ring.fetch", {"key": key})
+        return self._retry(op)
