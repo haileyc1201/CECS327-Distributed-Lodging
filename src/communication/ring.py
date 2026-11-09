@@ -105,6 +105,7 @@ class RingNode(FramedServer):
 
     def _call(self, peer: dict, msg_type: str, payload: dict) -> dict:
         if self._is_me(peer):
+            self.logger.event("LOCAL_DISPATCH", {"type": msg_type})
             return self._handlers[msg_type](payload)
         addr = (peer["host"], int(peer["port"]))
         label = f"{addr[0]}:{addr[1]}"

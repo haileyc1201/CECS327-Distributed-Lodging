@@ -8,6 +8,7 @@ Every message on the wire is an *envelope* (a Python dict) with this shape::
       "sender": "client",               # logical node name
       "receiver": "reservation-rpc",    # optional
       "timestamp": "2026-10-12T23:01:02.123Z",  # ISO-8601 UTC
+      "logical_timestamp": 0,           # stamped by transport immediately before send
       "correlation_id": null,           # id of the request this replies to
       "payload": {...}                  # message-specific body
     }
@@ -41,6 +42,7 @@ def make_envelope(msg_type: str, sender: str, payload: Any, receiver: str | None
         "sender": sender,
         "receiver": receiver,
         "timestamp": now_iso(),
+        "logical_timestamp": 0,  # unsent; transport replaces it with the node clock
         "correlation_id": correlation_id,
         "payload": payload,
     }
