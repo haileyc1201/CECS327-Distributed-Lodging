@@ -6,6 +6,46 @@ Team: Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, T
 
 We are building a distributed lodging reservation system, similar to Airbnb. This branch, `main`, holds the Python simulation. Every node runs as its own OS process and the nodes talk over TCP sockets. The live web version of the same protocol, with Node microservices, a React UI and Cloudflare Workers with D1, is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend) and runs at https://pitchblack.icu.
 
+## Milestone 3: P2P Integration
+
+Milestone 3 adds a peer-to-peer overlay to the lodging reservation system. The implementation uses a Chord-style ring where property listings are distributed across peers using hashed keys. Peers can join and leave the ring, route lookup requests through other peers, discover property listings, replicate data, and recover when a peer crashes unexpectedly.
+
+### Milestone 3 Requirements Demonstrated
+
+| Requirement | Implementation |
+|---|---|
+| At least four peer nodes | The demos start 5 to 8 peers |
+| Peer joining | New peers join through a bootstrap peer and are placed into the ring |
+| Peer leaving | A peer can leave gracefully and transfer its keys to its successor |
+| Lookup routed through overlay | Lookup requests are forwarded hop-by-hop through the ring |
+| Resource discovery | Clients can discover property listings through any peer |
+| Failure recovery | A crashed peer is detected and the ring repairs itself using replicated data |
+
+### P2P Files
+
+- `src/communication/ring.py` - peer node, join, leave, stabilization, and replication
+- `src/communication/lookup.py` - hop-by-hop lookup routing
+- `src/communication/p2p_catalog.py` - publishes property listings into the overlay
+- `src/communication/p2p_client.py` - client-side property discovery
+- `src/communication/p2p_demo.py` - lookup and discovery demo
+- `src/communication/ring_demo.py` - join, leave, crash, and recovery demo
+- `tests/test_p2p_lookup.py` - automated P2P tests
+
+### Required Software
+
+- Python 3.10 or newer
+- Git
+
+No third-party Python packages are required for the P2P demo.
+
+### Update the Repository
+
+From the repository root:
+
+```bash
+git checkout main
+git pull
+
 ## What Milestone 2 Delivers
 
 | Requirement | How we did it | Code |
