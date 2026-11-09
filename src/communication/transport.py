@@ -38,8 +38,13 @@ def _recv_exact(sock: socket.socket, n: int) -> bytes:
 
 def send_message(sock: socket.socket, message: dict, logger: MessageLogger, peer: str,
                  fmt: str = "json") -> None:
-    body = marshal(message, fmt)
-    logger.send(peer, message, body, fmt)
+    # One shared node lock orders clock updates and file writes across all of
+    # its RPC, broker, group and ring/lookup connections. Never mutate the
+    # caller's envelope: forwarding/fanout must get a fresh send timestamp.
+    with logger.event_lock:
+        outgoing = {**message, "logical_timestamp": logger.clock.send()}
+        body = marshal(outgoing, fmt)
+        logger.send(peer, outgoing, body, fmt)
     sock.sendall(HEADER.pack(len(body)) + FORMATS[fmt] + body)
 
 
@@ -50,6 +55,8 @@ def recv_message(sock: socket.socket, logger: MessageLogger, peer: str) -> tuple
     fmt = FORMAT_CODES[_recv_exact(sock, 1)]
     body = _recv_exact(sock, length)
     message = unmarshal(body, fmt)
+    if not isinstance(message, dict):
+        raise ValueError("message envelope must be an object")
     logger.recv(peer, body, message, fmt)
     return message, fmt
 

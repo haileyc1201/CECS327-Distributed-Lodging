@@ -50,6 +50,7 @@ class LookupNode(RingNode):
 
     def lookup(self, key: str) -> dict:
         """Start a LOOKUP here (hop 0) and return the reply that came back to me."""
+        self.logger.event("LOOKUP_START", {"key": key})
         return self._h_lookup({"key": key, "origin": self.name, "hops": 0, "path": []})
 
     def _h_lookup(self, body: dict) -> dict:

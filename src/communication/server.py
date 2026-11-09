@@ -14,6 +14,7 @@ class FramedServer:
     def __init__(self, name: str, host: str = "127.0.0.1", port: int = 0):
         self.name = name
         self.logger = MessageLogger(name)
+        self.clock = self.logger.clock
         self._sock = listen(host, port)
         self.host, self.port = self._sock.getsockname()
         self._stop = threading.Event()
@@ -36,6 +37,10 @@ class FramedServer:
                         message, fmt = recv_message(conn, self.logger, peer)
                     except (ConnectionClosed, ConnectionResetError, OSError):
                         break
+                    except ValueError as exc:
+                        self.logger.event("INVALID_MESSAGE", {"reason": str(exc)})
+                        break
+                    self.logger.event("DISPATCH", {"type": message.get("type"), "message_id": message.get("id")})
                     if not self.handle(conn, message, fmt, peer):
                         break
         finally:

@@ -1,0 +1,27 @@
+{
+  "kind": "real-process clock/ordering capture, not a recovery test",
+  "nodes": 3,
+  "owner": "clock-B",
+  "lookup_path": [
+    "clock-A",
+    "clock-C",
+    "clock-B"
+  ],
+  "hops": 2,
+  "events": 94,
+  "message_types": [
+    "control.ready",
+    "ring.find_successor",
+    "ring.find_successor.reply",
+    "ring.join_at",
+    "ring.join_at.reply",
+    "ring.lookup",
+    "ring.lookup.reply",
+    "ring.replicate",
+    "ring.replicate.reply",
+    "ring.set_successor",
+    "ring.set_successor.reply",
+    "ring.store",
+    "ring.store.reply"
+  ]
+}

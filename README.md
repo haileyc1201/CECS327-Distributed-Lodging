@@ -6,6 +6,13 @@ Team: Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, T
 
 We are building a distributed lodging reservation system, similar to Airbnb. This branch, `main`, holds the Python simulation. Every node runs as its own OS process and the nodes talk over TCP sockets.
 
+## Milestone 4: Coordination (Tom's parts)
+
+Logical clocks, per-node/total-ordered logs, and a real leader-crash recovery test:
+[design, run commands, limitations and recorded evidence](docs/milestone-4/README.md).
+The failure test uses a **temporary replaceable coordinator stand-in**, pending
+Josiah's final election/lock implementation.
+
 ## Milestone 3: P2P Integration
 
 Milestone 3 adds a peer-to-peer overlay to the lodging reservation system. The implementation uses a Chord-style ring where property listings are distributed across peers using hashed keys. Peers can join and leave the ring, route lookup requests through other peers, discover property listings, replicate data, and recover when a peer crashes unexpectedly.
