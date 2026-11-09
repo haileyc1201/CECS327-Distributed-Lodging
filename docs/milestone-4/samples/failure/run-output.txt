@@ -1,0 +1,33 @@
+NOTE: real processes using TEMPORARY stand-in; replace with Josiah's UNG-102/103 adapter.
+{
+  "status": "passed",
+  "old_leader": "standin-3",
+  "new_leader": "standin-2",
+  "recovery": {
+    "policy": "restore",
+    "leader": "standin-2",
+    "holder_still_active": true,
+    "state": {
+      "holder": "failure-holder",
+      "request_id": "ed287353318e42dbb7cc3a1ce3b9a0f7",
+      "token": "standin-3:1",
+      "version": 1,
+      "last_released": null
+    },
+    "standin": true
+  },
+  "critical_sections": [
+    {
+      "client": "failure-holder",
+      "enter": 18227.15183688,
+      "exit": 18227.374485155,
+      "token": "standin-3:1"
+    },
+    {
+      "client": "failure-contender",
+      "enter": 18227.404381673,
+      "exit": 18227.555323879,
+      "token": "standin-2:3"
+    }
+  ]
+}

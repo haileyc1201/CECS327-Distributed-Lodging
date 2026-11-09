@@ -1,0 +1,2 @@
+{"client": "failure-holder", "token": "standin-3:1", "operation": "protected ledger append"}
+{"client": "failure-contender", "token": "standin-2:3", "operation": "protected ledger append"}

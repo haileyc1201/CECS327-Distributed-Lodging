@@ -1,0 +1,43 @@
+test_envelope_has_iso_timestamp (tests.test_communication.TC1_Marshalling.test_envelope_has_iso_timestamp) ... ok
+test_json_round_trip (tests.test_communication.TC1_Marshalling.test_json_round_trip) ... ok
+test_xml_round_trip_preserves_types (tests.test_communication.TC1_Marshalling.test_xml_round_trip_preserves_types) ... ok
+test_availability_check (tests.test_communication.TC2_RequestReply.test_availability_check) ... ok
+test_errors (tests.test_communication.TC2_RequestReply.test_errors) ... ok
+test_xml_rpc_call (tests.test_communication.TC2_RequestReply.test_xml_rpc_call) ... ok
+test_booking_flow (tests.test_communication.TC3_BookingPubSubGroup.test_booking_flow) ... ok
+test_join_view_multicast_and_failure (tests.test_communication.TC4_GroupMembership.test_join_view_multicast_and_failure) ... ok
+test_only_matching_topic (tests.test_communication.TC5_Pubsub_Topics.test_only_matching_topic) ... ok
+test_every_entry_is_timestamped (tests.test_communication.TC6_Logging.test_every_entry_is_timestamped) ... ok
+test_empty_logs_are_not_successful_output (tests.test_event_ordering.OrderingTests.test_empty_logs_are_not_successful_output) ... ok
+test_malformed_logs_report_source_line (tests.test_event_ordering.OrderingTests.test_malformed_logs_report_source_line) ... ok
+test_merge_script_writes_parseable_ordered_log (tests.test_event_ordering.OrderingTests.test_merge_script_writes_parseable_ordered_log) ... ok
+test_rejects_duplicate_keys_and_input_output_overlap (tests.test_event_ordering.OrderingTests.test_rejects_duplicate_keys_and_input_output_overlap) ... ok
+test_timestamp_then_string_node_id_independent_of_input_order (tests.test_event_ordering.OrderingTests.test_timestamp_then_string_node_id_independent_of_input_order) ... ok
+test_overlap_and_missing_contender_rejected (tests.test_failure_recovery.ExclusionAssertions.test_overlap_and_missing_contender_rejected) ... ok
+test_kill_live_leader_restore_holder_then_grant_contender (tests.test_failure_recovery.RealFailureIntegration.test_kill_live_leader_restore_holder_then_grant_contender) ... ok
+test_no_grant_without_replication_quorum (tests.test_failure_recovery.StandinLockTests.test_no_grant_without_replication_quorum) ... ok
+test_restore_does_not_clear_a_live_holder (tests.test_failure_recovery.StandinLockTests.test_restore_does_not_clear_a_live_holder) ... ok
+test_retry_same_grant_denial_and_stale_release (tests.test_failure_recovery.StandinLockTests.test_retry_same_grant_denial_and_stale_release) ... ok
+test_is_responsible_matches_successor_rule (tests.test_keymap.KeyMapTest.test_is_responsible_matches_successor_rule) ... ok
+test_key_hash_is_stable_and_in_range (tests.test_keymap.KeyMapTest.test_key_hash_is_stable_and_in_range) ... ok
+test_responsible_peer_and_table (tests.test_keymap.KeyMapTest.test_responsible_peer_and_table) ... ok
+test_successor_rule (tests.test_keymap.KeyMapTest.test_successor_rule) ... ok
+test_concurrent_ticks_are_unique (tests.test_lamport.ClockTests.test_concurrent_ticks_are_unique) ... ok
+test_invalid_timestamps_do_not_advance_clock (tests.test_lamport.ClockTests.test_invalid_timestamps_do_not_advance_clock) ... ok
+test_local_event_and_send (tests.test_lamport.ClockTests.test_local_event_and_send) ... ok
+test_receive_lower_equal_and_higher (tests.test_lamport.ClockTests.test_receive_lower_equal_and_higher) ... ok
+test_all_message_types_stamped_in_json_and_xml (tests.test_lamport.TransportClockTests.test_all_message_types_stamped_in_json_and_xml) ... ok
+test_file_control_signals_preserve_causality (tests.test_lamport.TransportClockTests.test_file_control_signals_preserve_causality) ... ok
+test_forwarding_reused_envelope_gets_new_send_time (tests.test_lamport.TransportClockTests.test_forwarding_reused_envelope_gets_new_send_time) ... ok
+test_local_ring_operations_also_tick (tests.test_lamport.TransportClockTests.test_local_ring_operations_also_tick) ... ok
+test_missing_or_invalid_wire_timestamp_rejected (tests.test_lamport.TransportClockTests.test_missing_or_invalid_wire_timestamp_rejected) ... ok
+test_shared_node_clock_and_threaded_per_node_log (tests.test_lamport.TransportClockTests.test_shared_node_clock_and_threaded_per_node_log) ... ok
+test_catalog_publish_and_client_discovery (tests.test_p2p_lookup.P2PLookupTest.test_catalog_publish_and_client_discovery) ... ok
+test_discovery_survives_owner_crash (tests.test_p2p_lookup.P2PLookupTest.test_discovery_survives_owner_crash) ... ok
+test_each_hop_is_logged_with_hop_count (tests.test_p2p_lookup.P2PLookupTest.test_each_hop_is_logged_with_hop_count) ... ok
+test_lookup_reaches_responsible_peer_hop_by_hop (tests.test_p2p_lookup.P2PLookupTest.test_lookup_reaches_responsible_peer_hop_by_hop) ... ok
+
+----------------------------------------------------------------------
+Ran 38 tests in 4.971s
+
+OK
