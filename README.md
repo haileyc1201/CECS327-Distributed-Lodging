@@ -4,7 +4,7 @@ CECS 327, Section 02, California State University, Long Beach
 
 Team: Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter and Anthony Torres
 
-We are building a distributed lodging reservation system, similar to Airbnb. This branch, `main`, holds the Python simulation. Every node runs as its own OS process and the nodes talk over TCP sockets. The live web version of the same protocol, with Node microservices, a React UI and Cloudflare Workers with D1, is on [`tom-react-frontend`](https://github.com/haileyc1201/CECS327-Distributed-Lodging/tree/tom-react-frontend) and runs at https://pitchblack.icu.
+We are building a distributed lodging reservation system, similar to Airbnb. This branch, `main`, holds the Python simulation. Every node runs as its own OS process and the nodes talk over TCP sockets.
 
 ## Milestone 3: P2P Integration
 
@@ -45,6 +45,7 @@ From the repository root:
 ```bash
 git checkout main
 git pull
+```
 
 ## What Milestone 2 Delivers
 
@@ -135,8 +136,6 @@ python3 -m unittest discover -s tests -t . -v
 | Suite | Result |
 |---|---|
 | Python, this branch | 10/10 pass (`docs/logs/python-test-results.txt`) |
-| Node, `tom-react-frontend` | 7/7 pass |
-| Cloudflare Worker, live | 20/20 pass |
 
 ## Screenshots
 
@@ -151,21 +150,12 @@ All screenshots come from real runs and live in [`docs/milestone-2/screenshots/`
 | 05 | [Group communication: multicast, acks, membership and failure](docs/milestone-2/screenshots/05_group_multicast_membership.png) |
 | 06 | [Timestamped messages.jsonl](docs/milestone-2/screenshots/06_timestamped_message_log.png) |
 | 07 | [Python tests, 10/10](docs/milestone-2/screenshots/07_python_tests_passing.png) |
-| 08 | [Node comm demo](docs/milestone-2/screenshots/08_node_comm_demo.png) |
-| 09 | [Node tests, 7/7](docs/milestone-2/screenshots/09_node_tests_passing.png) |
-| 10a | [Worker under wrangler dev, 20/20 checks](docs/milestone-2/screenshots/10a_worker_local_tests.png) |
-| 10b | [Worker GET /api/comm/logs output](docs/milestone-2/screenshots/10b_worker_comm_logs_json.png) |
-| 11 | [React UI on the local stack after a booking through /api/rpc](docs/milestone-2/screenshots/11_react_ui.png) |
-| 12 | [Live Worker at lodging.pitchblack.icu, 20/20 checks](docs/milestone-2/screenshots/12_live_worker_tests.png) |
-| 13 | [Live GET /api/comm/logs output](docs/milestone-2/screenshots/13_live_worker_comm_logs.png) |
 
 ## Report and Logs
 
-- Report: [`CECS327_Milestone2_Communication_Report.pdf`](docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf), with its [markdown source](docs/milestone-2/CECS327_Milestone2_Communication_Report.md). It covers the communication model, message formats, marshalling, why we chose sockets and RPC, the pub-sub and group designs, a side-by-side look at the Python and Cloudflare versions, and real log excerpts.
+- Report: [`CECS327_Milestone2_Communication_Report.pdf`](docs/milestone-2/CECS327_Milestone2_Communication_Report.pdf), with its [markdown source](docs/milestone-2/CECS327_Milestone2_Communication_Report.md). It covers the communication model, message formats, marshalling, why we chose sockets and RPC, the pub-sub and group designs, and real log excerpts.
 - Logs from real runs are in [`docs/logs/`](docs/logs):
   - `python-messages.jsonl`, `python-demo-output.txt`, `python-test-results.txt` for the Python simulation on `main`
-  - `node-messages.jsonl`, `node-demo-output.txt`, `node-test-results.txt` for the Node stack on `tom-react-frontend`
-  - `worker-local-messages.jsonl`, `worker-local-demo-output.txt` for the Cloudflare Worker under `wrangler dev`
 - At runtime, messages are written to `logs/messages.jsonl`, which git ignores.
 - There is no video for this milestone.
 
