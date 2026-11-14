@@ -9,6 +9,10 @@ Frame layout::
 The length covers the body only. ``fmt`` is ``J`` (JSON) or ``X`` (XML).
 Framing removes the 1024-byte ``recv`` limit of the Milestone 1 prototype and
 lets several messages share one connection.
+
+Logical time: ``send_message`` ticks the sender's Lamport clock and stamps the
+envelope (``lc``); ``recv_message`` merges the stamp into the receiver's clock.
+The clock is the one on the ``MessageLogger`` passed in, i.e. the node's own.
 """
 from __future__ import annotations
 
@@ -38,6 +42,7 @@ def _recv_exact(sock: socket.socket, n: int) -> bytes:
 
 def send_message(sock: socket.socket, message: dict, logger: MessageLogger, peer: str,
                  fmt: str = "json") -> None:
+    message["lc"] = logger.clock.tick()              # Lamport rule for a send event
     body = marshal(message, fmt)
     logger.send(peer, message, body, fmt)
     sock.sendall(HEADER.pack(len(body)) + FORMATS[fmt] + body)
@@ -50,6 +55,7 @@ def recv_message(sock: socket.socket, logger: MessageLogger, peer: str) -> tuple
     fmt = FORMAT_CODES[_recv_exact(sock, 1)]
     body = _recv_exact(sock, length)
     message = unmarshal(body, fmt)
+    logger.clock.update(message.get("lc"))           # Lamport rule for a receive event
     logger.recv(peer, body, message, fmt)
     return message, fmt
 

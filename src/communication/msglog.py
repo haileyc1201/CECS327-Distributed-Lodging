@@ -5,6 +5,10 @@ Every send and receive is written as one JSON object per line (JSON Lines) to
 and echoed to stdout in a readable form. Each entry records the message both
 *before* marshalling (the dict) and *after* (the wire text), which documents
 the marshalling / unmarshalling step.
+
+Each logger also owns the node's Lamport clock (``logger.clock``). Entries carry
+the logical time as ``lc`` next to the wall-clock ``ts``: for SEND it is the
+stamp on the message, for RECV and INFO the node's clock after the event.
 """
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ import os
 import threading
 from pathlib import Path
 
+from .clock import LamportClock
 from .codec import now_iso
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,6 +33,7 @@ class MessageLogger:
     def __init__(self, node: str, quiet: bool | None = None):
         self.node = node
         self.quiet = bool(os.environ.get("COMM_QUIET")) if quiet is None else quiet
+        self.clock = LamportClock()
 
     def _write(self, entry: dict) -> None:
         path = log_path()
@@ -40,22 +46,23 @@ class MessageLogger:
             ev = entry["event"]
             msg = entry.get("message") or {}
             arrow = "->" if ev == "SEND" else "<-" if ev == "RECV" else "**"
-            print(f"{entry['ts']} [{self.node}] {ev:<5} {arrow} {entry.get('peer','')} "
+            print(f"{entry['ts']} lc={entry.get('lc', ''):<4} [{self.node}] {ev:<5} {arrow} {entry.get('peer','')} "
                   f"type={msg.get('type', '')} id={msg.get('id', '')} "
                   f"fmt={entry.get('format', '')} bytes={entry.get('bytes', '')} "
                   f"{entry.get('note', '')}", flush=True)
 
     def send(self, peer: str, message: dict, wire: bytes, fmt: str) -> None:
-        self._write({"ts": now_iso(), "node": self.node, "event": "SEND", "peer": peer,
+        self._write({"ts": now_iso(), "lc": message.get("lc"), "node": self.node, "event": "SEND", "peer": peer,
                      "format": fmt, "bytes": len(wire),
                      "message": message,                      # before marshalling
                      "wire": wire.decode("utf-8", "replace")})  # after marshalling
 
     def recv(self, peer: str, wire: bytes, message: dict, fmt: str) -> None:
-        self._write({"ts": now_iso(), "node": self.node, "event": "RECV", "peer": peer,
+        self._write({"ts": now_iso(), "lc": self.clock.time, "node": self.node, "event": "RECV", "peer": peer,
                      "format": fmt, "bytes": len(wire),
                      "wire": wire.decode("utf-8", "replace"),  # before unmarshalling
                      "message": message})                      # after unmarshalling
 
     def info(self, note: str, **extra) -> None:
-        self._write({"ts": now_iso(), "node": self.node, "event": "INFO", "note": note, **extra})
+        self._write({"ts": now_iso(), "lc": self.clock.time, "node": self.node, "event": "INFO", "note": note,
+                     **extra})

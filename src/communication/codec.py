@@ -7,7 +7,8 @@ Every message on the wire is an *envelope* (a Python dict) with this shape::
       "type": "rpc.request",            # message kind
       "sender": "client",               # logical node name
       "receiver": "reservation-rpc",    # optional
-      "timestamp": "2026-10-12T23:01:02.123Z",  # ISO-8601 UTC
+      "timestamp": "2026-10-12T23:01:02.123Z",  # ISO-8601 UTC (wall clock, for logs)
+      "lc": 42,                         # Lamport logical timestamp, stamped by send_message
       "correlation_id": null,           # id of the request this replies to
       "payload": {...}                  # message-specific body
     }

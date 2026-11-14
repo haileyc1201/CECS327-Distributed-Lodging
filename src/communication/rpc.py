@@ -62,13 +62,18 @@ class RPCServer(FramedServer):
 
 
 class RPCClient:
-    """Keeps one TCP connection open and performs blocking request-reply calls."""
+    """Keeps one TCP connection open and performs blocking request-reply calls.
+
+    Pass ``logger=node.logger`` to make the calls part of a node: they then use (and advance)
+    that node's Lamport clock instead of a fresh one.
+    """
 
     _ids = itertools.count(1)
 
-    def __init__(self, sender: str, host: str, port: int, fmt: str = "json", timeout: float = 5.0):
+    def __init__(self, sender: str, host: str, port: int, fmt: str = "json", timeout: float = 5.0,
+                 logger: MessageLogger | None = None):
         self.sender, self.host, self.port, self.fmt = sender, host, port, fmt
-        self.logger = MessageLogger(sender)
+        self.logger = logger or MessageLogger(sender)
         self.peer = f"{host}:{port}"
         self._sock = connect(host, port, timeout)
         self._lock = threading.Lock()
