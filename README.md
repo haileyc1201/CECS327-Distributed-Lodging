@@ -1,10 +1,35 @@
-# CECS 327 Distributed Lodging: Milestone 2, Communication
+# CECS 327 Distributed Lodging: Milestone 4, Coordination
 
 CECS 327, Section 02, California State University, Long Beach
 
 Team: Hailey Clark, Josiah Guzman, Cameron Hill, Wasik Islam, Andrew Trujillo, Tom Malter and Anthony Torres
 
 We are building a distributed lodging reservation system, similar to Airbnb. This branch, `main`, holds the Python simulation. Every node runs as its own OS process and the nodes talk over TCP sockets.
+
+## Milestone 4: Coordination
+
+Milestone 4 adds coordination between the nodes. Everything is standard-library Python and runs on localhost.
+
+| Feature | What it does | Code |
+|---|---|---|
+| Lamport logical clocks | One thread-safe clock per node. Every frame carries the sender's stamp `lc` (send: `t+1`, receive: `max(t, lc)+1`); invalid stamps are rejected | `src/communication/clock.py`, `transport.py`, `msglog.py` |
+| Bully leader election | The highest live id wins; a heartbeat monitor starts a new election when the leader stops answering | `src/communication/election.py`, `node.py` |
+| Ricart-Agrawala mutual exclusion | Decentralised lock ordered by `(request lc, node name)`; a crashed peer counts as having granted | `src/communication/mutex.py` |
+| Shared resource | A deliberately non-atomic counter that detects overlapping access | `src/communication/resource.py` |
+| Event ordering / merged logs | Every node writes `logs/nodes/<node>.jsonl`; `merge_logs` merges them into one log ordered by `(lc, node)` and checks every receive comes after its send | `src/communication/msglog.py`, `merge_logs.py` |
+| Leader-failure test | 5 node processes; the leader (node-E) is SIGKILLed inside the critical section, node-D is re-elected, the lock recovers and the resource stays consistent | `src/communication/failure_test.py` |
+
+Run from the repository root:
+
+```bash
+python3 -m src.communication.coordination_demo                                  # clocks, election, mutex on the shared resource
+python3 -m src.communication.clock_demo --output logs/milestone4-demo           # clocks + total order across 3 ring processes
+python3 -m src.communication.failure_test --output logs/milestone4-failure      # kill the leader during a critical section
+python3 -m src.communication.merge_logs logs/milestone4-failure/nodes -o /tmp/ordered.jsonl --table 40
+python3 -m unittest discover -s tests -t . -v                                   # all tests (53)
+```
+
+Design notes, sample logs from real runs, test results and screenshots are in [`docs/milestone-4/`](docs/milestone-4/README.md).
 
 ## Milestone 3: P2P Integration
 

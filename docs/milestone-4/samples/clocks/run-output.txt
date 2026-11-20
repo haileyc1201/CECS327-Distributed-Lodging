@@ -1,0 +1,27 @@
+3 ring peers (separate processes) + clock-client; owner of listing:101 = clock-B
+lookup path clock-A -> clock-C -> clock-B (2 hops), listing FOUND
+merged 78 events from 4 per-node logs into docs/milestone-4/samples/clocks/ordered.jsonl
+checked 35 send/receive pairs: every RECV has a larger lc than its SEND (happened-before preserved)
+final Lamport clock per node: clock-A=67, clock-B=63, clock-C=65, clock-client=68
+
+first messages of the run in total order (lc, node):
+  LC | node         | event  | peer             | detail
+-----+--------------+--------+------------------+-----------------------------------------
+   1 | clock-A      | SEND   | clock-A.ready.js | control.ready
+   1 | clock-B      | SEND   | bootstrap        | ring.find_successor
+   1 | clock-C      | SEND   | bootstrap        | ring.find_successor
+   2 | clock-A      | RECV   | clock-B          | ring.find_successor
+   2 | clock-client | RECV   | clock-A          | control.ready
+   3 | clock-A      | SEND   | clock-B          | ring.find_successor.reply
+   4 | clock-B      | RECV   | clock-A          | ring.find_successor.reply
+   5 | clock-B      | SEND   | clock-A          | ring.join_at
+   6 | clock-A      | RECV   | clock-B          | ring.join_at
+   7 | clock-A      | SEND   | clock-B          | ring.replicate
+   8 | clock-B      | RECV   | clock-A          | ring.replicate
+   9 | clock-B      | SEND   | clock-A          | ring.replicate.reply
+  10 | clock-A      | RECV   | clock-B          | ring.replicate.reply
+  11 | clock-A      | SEND   | clock-B          | ring.join_at.reply
+  12 | clock-B      | RECV   | clock-A          | ring.join_at.reply
+  13 | clock-B      | SEND   | clock-A          | ring.replicate
+  14 | clock-A      | RECV   | clock-B          | ring.replicate
+  15 | clock-A      | SEND   | clock-B          | ring.replicate.reply
