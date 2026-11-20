@@ -26,7 +26,7 @@ python3 -m src.communication.coordination_demo                                  
 python3 -m src.communication.clock_demo --output logs/milestone4-demo           # clocks + total order across 3 ring processes
 python3 -m src.communication.failure_test --output logs/milestone4-failure      # kill the leader during a critical section
 python3 -m src.communication.merge_logs logs/milestone4-failure/nodes -o /tmp/ordered.jsonl --table 40
-python3 -m unittest discover -s tests -t . -v                                   # all tests (53)
+python3 -m unittest discover -s tests -t . -v                                   # all tests (60)
 ```
 
 Design notes, sample logs from real runs, test results and screenshots are in [`docs/milestone-4/`](docs/milestone-4/README.md).

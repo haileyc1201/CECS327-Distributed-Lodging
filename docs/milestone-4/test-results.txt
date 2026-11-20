@@ -1,3 +1,12 @@
+test_failover_then_bookings_still_exclusive (tests.test_cluster.TC1_ElectionInTheCluster.test_failover_then_bookings_still_exclusive) ... ok
+test_leader_is_elected_reported_and_announced (tests.test_cluster.TC1_ElectionInTheCluster.test_leader_is_elected_reported_and_announced) ... ok
+test_critical_sections_do_not_overlap (tests.test_cluster.TC2_MutualExclusionOnBookings.test_critical_sections_do_not_overlap) ... ok
+test_same_property_is_sold_only_once (tests.test_cluster.TC2_MutualExclusionOnBookings.test_same_property_is_sold_only_once) ... ok
+test_control_experiment_double_booking (tests.test_cluster.TC3_WithoutTheMutex.test_control_experiment_double_booking)
+Same race, mutex switched off: several nodes sell property 101. ... ok
+test_every_component_uses_the_nodes_clock (tests.test_cluster.TC4_OneClockPerNode.test_every_component_uses_the_nodes_clock) ... ok
+test_reservation_index_keeps_every_booking (tests.test_cluster.TC5_RingBackedCluster.test_reservation_index_keeps_every_booking)
+Three nodes share the reservation index in the ring (read-modify-write); none may be lost. ... ok
 test_envelope_has_iso_timestamp (tests.test_communication.TC1_Marshalling.test_envelope_has_iso_timestamp) ... ok
 test_json_round_trip (tests.test_communication.TC1_Marshalling.test_json_round_trip) ... ok
 test_xml_round_trip_preserves_types (tests.test_communication.TC1_Marshalling.test_xml_round_trip_preserves_types) ... ok
@@ -55,6 +64,6 @@ test_each_hop_is_logged_with_hop_count (tests.test_p2p_lookup.P2PLookupTest.test
 test_lookup_reaches_responsible_peer_hop_by_hop (tests.test_p2p_lookup.P2PLookupTest.test_lookup_reaches_responsible_peer_hop_by_hop) ... ok
 
 ----------------------------------------------------------------------
-Ran 53 tests in 11.648s
+Ran 60 tests in 16.275s
 
 OK

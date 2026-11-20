@@ -76,10 +76,11 @@ The capture directories must be new.
 - `samples/failure/`: the failure test.
   - Contents: `run-output.txt`, `nodes/*.jsonl` for 7 nodes, `ordered.jsonl` with 566 events and `summary.json`.
   - Re-merging `nodes/` reproduces `ordered.jsonl` byte for byte.
-- `test-results.txt`: 53 tests, all OK.
+- `test-results.txt`: 60 tests, all OK (including `test_cluster.py`).
 - `screenshots/`:
   - `01_full_test_suite.png`
   - `02_tom_tests.png`
   - `03_clock_ordering_demo.png`
   - `04_merged_ordered_log.png`
   - `05_failure_test_leader_killed.png`
+  - `06_test_cluster.png`
