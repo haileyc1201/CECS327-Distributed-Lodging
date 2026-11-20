@@ -1,0 +1,94 @@
+{
+  "status": "passed",
+  "old_leader": "node-E",
+  "new_leader": "node-D",
+  "leader_returncode": -9,
+  "resource": {
+    "value": 7,
+    "expected": 7,
+    "violations": [],
+    "history": [
+      {
+        "node": "node-E",
+        "before": 0,
+        "after": 1,
+        "lc": 106
+      },
+      {
+        "node": "node-C",
+        "before": 1,
+        "after": 2,
+        "lc": 176
+      },
+      {
+        "node": "node-D",
+        "before": 2,
+        "after": 3,
+        "lc": 187
+      },
+      {
+        "node": "node-C",
+        "before": 3,
+        "after": 4,
+        "lc": 222
+      },
+      {
+        "node": "node-D",
+        "before": 4,
+        "after": 5,
+        "lc": 249
+      },
+      {
+        "node": "node-C",
+        "before": 5,
+        "after": 6,
+        "lc": 263
+      },
+      {
+        "node": "node-D",
+        "before": 6,
+        "after": 7,
+        "lc": 272
+      }
+    ]
+  },
+  "critical_sections": [
+    {
+      "client": "node-E",
+      "enter": 0.0,
+      "exit": 1.604
+    },
+    {
+      "client": "node-C",
+      "enter": 1.606,
+      "exit": 1.6575
+    },
+    {
+      "client": "node-C",
+      "enter": 1.7111,
+      "exit": 1.7624
+    },
+    {
+      "client": "node-C",
+      "enter": 1.8157,
+      "exit": 1.8676
+    },
+    {
+      "client": "node-D",
+      "enter": 1.6585,
+      "exit": 1.7097
+    },
+    {
+      "client": "node-D",
+      "enter": 1.7635,
+      "exit": 1.8147
+    },
+    {
+      "client": "node-D",
+      "enter": 1.8688,
+      "exit": 1.9204
+    }
+  ],
+  "events": 566,
+  "causal_pairs_checked": 235
+}

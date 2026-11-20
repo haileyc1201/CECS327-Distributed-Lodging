@@ -55,10 +55,10 @@ class RicartAgrawala:
         n = self.node
         with self._cond:
             self.state = WANTED
-            self.req_ts = n.clock.tick()        # the request's timestamp
-            ts = self.req_ts
-        n.logger.info(f"MUTEX {n.name} requests the critical section, ts={ts}",
-                      mutex={"action": "request", "node": n.name, "ts": ts})
+            with n.logger.event_lock:           # tick + log as one event: the log entry's lc IS the request ts
+                self.req_ts = ts = n.clock.tick()
+                n.logger.info(f"MUTEX {n.name} requests the critical section, ts={ts}", stamp=ts,
+                              mutex={"action": "request", "node": n.name, "ts": ts})
         threads = [threading.Thread(target=self._ask, args=(p, ts), daemon=True) for p in list(n.peers)]
         for t in threads:
             t.start()

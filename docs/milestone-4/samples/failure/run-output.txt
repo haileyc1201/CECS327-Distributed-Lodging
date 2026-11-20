@@ -1,0 +1,10 @@
+[1] started 5 node processes: node-A(id 1, pid 137281), node-B(id 2, pid 137283), node-C(id 3, pid 137285), node-D(id 4, pid 137287), node-E(id 5, pid 137289)
+[2] Bully election started by node-A -> leader node-E (agreed by all: ['node-A', 'node-B', 'node-C', 'node-D', 'node-E'])
+[3] node-E (the leader) entered the critical section, updated the resource (value=1) and stays inside
+[4] node-C and node-D request the critical section (3 updates each); node-E defers its replies
+[5] SIGKILL -> node-E (pid 137289) exited with -9 while inside the critical section
+[6] heartbeat noticed the crash; Bully re-election -> new leader node-D (agreed by node-A, node-B, node-C, node-D)
+[7] lock recovered: first contender entered 2.0 ms after the SIGKILL; entries node-C=3, node-D=3
+[8] mutual exclusion holds: 7 critical sections, none overlapping; node-D reads value=7 (expected 7), violations=0, history [1, 2, 3, 4, 5, 6, 7]
+[9] merged 566 events from 7 per-node logs into docs/milestone-4/samples/failure/ordered.jsonl; 235 send/receive pairs in causal order
+RESULT: passed - leader node-E killed (exit -9), node-D elected, resource 7/7, 7 non-overlapping critical sections
