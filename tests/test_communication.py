@@ -158,6 +158,11 @@ class TC6_Logging(unittest.TestCase):
         self.assertTrue(entries)
         for e in entries:
             self.assertRegex(e["ts"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$")
+            self.assertIsInstance(e["lc"], int)                      # Lamport time on every entry
+            if e["event"] == "SEND":
+                self.assertEqual(e["lc"], e["message"]["lc"])        # the stamp that went on the wire
+            if e["event"] == "RECV":
+                self.assertGreater(e["lc"], e["message"]["lc"])      # receive = max(local, stamp) + 1
         sends = [e for e in entries if e["event"] == "SEND"]
         self.assertTrue(all("message" in e and "wire" in e for e in sends))
 

@@ -26,3 +26,7 @@ Thumbs.db
 # Communication milestone runtime logs (copies kept in docs/logs)
 logs/*.jsonl
 logs/*.out
+
+# Milestone 4 per-node logical event logs and capture directories
+logs/nodes/
+logs/milestone4*/

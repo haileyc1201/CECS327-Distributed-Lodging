@@ -14,6 +14,7 @@ class FramedServer:
     def __init__(self, name: str, host: str = "127.0.0.1", port: int = 0):
         self.name = name
         self.logger = MessageLogger(name)
+        self.clock = self.logger.clock          # the node's Lamport clock
         self._sock = listen(host, port)
         self.host, self.port = self._sock.getsockname()
         self._stop = threading.Event()
@@ -36,16 +37,25 @@ class FramedServer:
                         message, fmt = recv_message(conn, self.logger, peer)
                     except (ConnectionClosed, ConnectionResetError, OSError):
                         break
+                    except ValueError as exc:            # malformed frame or invalid Lamport stamp
+                        self.logger.info(f"rejected an invalid message from {peer}: {exc}",
+                                         invalid={"peer": peer, "reason": str(exc)})
+                        break
                     if not self.handle(conn, message, fmt, peer):
                         break
         finally:
             self.on_disconnect(conn)
 
     def serve_forever(self) -> None:
-        self.logger.info(f"listening on {self.host}:{self.port}")
+        if self._stop.is_set():
+            return
+        with self.logger.event_lock:
+            # Startup is the node's initial state, not a logical event: a fresh node logs it at lc 0
+            # (its clock stays at 0 until the first real event); a reused name just ticks.
+            self.logger.info(f"listening on {self.host}:{self.port}", stamp=0 if self.clock.time == 0 else None)
         try:
             self._sock.settimeout(0.1)
-        except OSError:                      # stop() already closed the socket (WinError 10038 on Windows)
+        except OSError:                  # stop() closed the socket before this thread got going (WinError 10038 on Windows)
             return
         while not self._stop.is_set():
             try:
