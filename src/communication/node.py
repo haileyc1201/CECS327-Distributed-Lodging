@@ -20,6 +20,7 @@ from typing import Callable
 
 from .codec import make_envelope
 from .election import BullyElection
+from .msglog import MessageLogger
 from .mutex import RicartAgrawala
 from .server import FramedServer
 from .transport import ConnectionClosed, connect, recv_message, send_message
@@ -33,8 +34,11 @@ NET_ERRORS = (ConnectionClosed, socket.timeout, OSError, ValueError)
 
 
 class CoordinationNode(FramedServer):
-    def __init__(self, name: str, node_id: int, host: str = "127.0.0.1", port: int = 0):
+    def __init__(self, name: str, node_id: int, host: str = "127.0.0.1", port: int = 0,
+                 logger: MessageLogger | None = None):
         super().__init__(name, host, port)
+        if logger is not None:                            # embedded in a bigger node: share its clock
+            self.logger = logger
         self.id = node_id
         self.me = {"name": name, "id": node_id, "host": self.host, "port": self.port}
         self.peers: list[dict] = []                       # every *other* node

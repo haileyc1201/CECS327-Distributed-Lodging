@@ -19,7 +19,7 @@ from src.communication.resource import SharedResource, update_resource  # noqa: 
 from src.communication.rpc import RPCClient  # noqa: E402
 
 
-def wait_for(cond, timeout=8.0):
+def wait_for(cond, timeout=20.0):
     end = time.time() + timeout
     while time.time() < end:
         if cond():

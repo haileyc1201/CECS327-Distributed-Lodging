@@ -43,7 +43,10 @@ class FramedServer:
 
     def serve_forever(self) -> None:
         self.logger.info(f"listening on {self.host}:{self.port}")
-        self._sock.settimeout(0.1)
+        try:
+            self._sock.settimeout(0.1)
+        except OSError:                      # stop() already closed the socket (WinError 10038 on Windows)
+            return
         while not self._stop.is_set():
             try:
                 conn, addr = self._sock.accept()

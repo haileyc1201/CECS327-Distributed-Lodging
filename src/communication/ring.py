@@ -104,7 +104,7 @@ class RingNode(FramedServer):
         self.succs = out[:SUCC_LIST] or [self.me]
 
     def _call(self, peer: dict, msg_type: str, payload: dict) -> dict:
-        if self._is_me(peer):
+        if self._is_me(peer): 
             return self._handlers[msg_type](payload)
         addr = (peer["host"], int(peer["port"]))
         label = f"{addr[0]}:{addr[1]}"

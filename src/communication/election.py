@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .node import CoordinationNode
@@ -36,6 +36,7 @@ class BullyElection:
         self.ok_timeout = ok_timeout                  # how long a higher node may take to say OK
         self.coordinator_timeout = coordinator_timeout  # how long to wait for the winner's announcement
         self.leader: dict | None = None
+        self.on_leader: Callable[[dict], None] | None = None   # called with the leader whenever it changes
         self._lock = threading.Lock()
         self._electing = False
         self._announced = threading.Event()
@@ -92,6 +93,15 @@ class BullyElection:
             n.try_call(p, "election.coordinator", {"leader": n.me}, timeout=self.ok_timeout)
         n.logger.info(f"COORDINATOR: {n.name} (id {n.id}) is the leader",
                       election={"action": "won", "leader": n.name})
+        self._notify()
+
+    def _notify(self) -> None:
+        cb, leader = self.on_leader, self.leader
+        if cb is not None and leader is not None:
+            try:
+                cb(leader)
+            except Exception as exc:  # noqa: BLE001 - a failing hook must not break the election
+                self.node.logger.info(f"on_leader hook failed: {type(exc).__name__}: {exc}")
 
     # ------------------------------------------------------------ handlers
 
@@ -112,6 +122,7 @@ class BullyElection:
         self._announced.set()
         self.node.logger.info(f"{self.node.name} accepts {leader['name']} (id {leader['id']}) as leader",
                               election={"action": "accept", "leader": leader["name"]})
+        self._notify()
         return {"ack": True}
 
     def _h_ping(self, body: dict) -> dict:

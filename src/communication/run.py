@@ -2,6 +2,7 @@
 
     python -m src.communication.run property [--ring 6301,6302,...]
     python -m src.communication.run reservation [--ring 6301,6302,...]
+    python -m src.communication.run reservation-node reservation-A [--ring 6301,6302,...]
     python -m src.communication.run broker
     python -m src.communication.run coordinator
     python -m src.communication.run subscriber notification-service
@@ -11,6 +12,10 @@
 
 ``property --ring`` and ``reservation --ring`` store their records in the ring overlay
 (the listed ports are bootstrap peers) instead of in memory.
+
+``reservation-node NAME`` starts one member of the reservation cluster (names, ranks and ports are
+RESERVATION_NODES in services.py: reservation-A/B/C). Start all three: they elect a leader (Bully, highest
+rank wins), and bookings sent to any of them are serialised across the cluster by Ricart-Agrawala.
 """
 from __future__ import annotations
 
@@ -21,8 +26,8 @@ from .broker import Broker, Subscriber
 from .group import GroupCoordinator, GroupMember
 from .msglog import MessageLogger
 from .ring import RingClient, RingNode
-from .services import (BOOKING_TOPIC, PORTS, REPLICA_GROUP, SUBSCRIBERS, PropertyNode, ReservationNode,
-                       replica_handler)
+from .services import (BOOKING_TOPIC, PORTS, REPLICA_GROUP, RESERVATION_NODES, SUBSCRIBERS, PropertyNode,
+                       ReservationNode, cluster_peers, replica_handler)
 
 
 def _forever(server):
@@ -45,6 +50,11 @@ def main(argv: list[str]) -> None:
         _forever(PropertyNode(ring=_ring_client("property-rpc", argv)))
     elif role == "reservation":
         _forever(ReservationNode(ring=_ring_client("reservation-rpc", argv)))
+    elif role == "reservation-node":
+        name = argv[1]
+        cfg = RESERVATION_NODES[name]
+        _forever(ReservationNode(port=cfg["rpc"], name=name, node_id=cfg["id"], coord_port=cfg["coord"],
+                                 cluster=cluster_peers(), ring=_ring_client(name, argv[1:])))
     elif role == "broker":
         _forever(Broker(port=PORTS["broker"]))
     elif role == "coordinator":

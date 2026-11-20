@@ -23,10 +23,34 @@ from .codec import now_iso
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_LOG = ROOT / "logs" / "messages.jsonl"
 _lock = threading.Lock()
+_handles: dict[str, object] = {}     # one open append-handle per log file, shared by every logger in this process
 
 
 def log_path() -> Path:
     return Path(os.environ.get("COMM_LOG_FILE", DEFAULT_LOG))
+
+
+def _handle_for(path: Path):
+    """The open log file. Opening it once matters: reopening it for every message is very slow on Windows
+    (every open is scanned by antivirus) and, since all nodes share one lock, it made whole clusters crawl."""
+    key = str(path)
+    fh = _handles.get(key)
+    if fh is None or fh.closed:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(path, "a", encoding="utf-8", buffering=1)      # line buffered
+        _handles[key] = fh
+    return fh
+
+
+def close_logs() -> None:
+    """Close the log files (e.g. before deleting logs/messages.jsonl on Windows)."""
+    with _lock:
+        for fh in _handles.values():
+            try:
+                fh.close()
+            except OSError:
+                pass
+        _handles.clear()
 
 
 class MessageLogger:
@@ -36,12 +60,11 @@ class MessageLogger:
         self.clock = LamportClock()
 
     def _write(self, entry: dict) -> None:
-        path = log_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
         line = json.dumps(entry, separators=(",", ":"))
         with _lock:
-            with open(path, "a", encoding="utf-8") as fh:
-                fh.write(line + "\n")
+            fh = _handle_for(log_path())
+            fh.write(line + "\n")
+            fh.flush()                                   # readers (tests, the demo summary) see it at once
         if not self.quiet:
             ev = entry["event"]
             msg = entry.get("message") or {}
